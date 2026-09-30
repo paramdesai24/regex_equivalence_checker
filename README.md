@@ -1,130 +1,185 @@
 # Regex Equivalence Checker and Automata Visualizer
 
-A Principles of Compiler Design course project for determining whether two regular expressions denote identical regular languages, accompanied by step-by-step automata visualization.
+A Principles of Compiler Design course project.  Determines whether two regular expressions denote identical regular languages, with step-by-step automata visualization for each stage.
 
 ---
 
-## 🎯 Project Overview & Pipeline Roadmap
-
-The eventual pipeline of the system converts two regular expressions into canonical automata to formally test language equivalence:
+## Pipeline
 
 ```
-Regex A & Regex B
-   │
-   ▼
-1. Lexical Analysis & Tokenization (Phase 1 - Complete)
-   │
-   ▼
-2. Explicit Concatenation (a.b) & Shunting-Yard Postfix Conversion (Phase 1 - Complete)
-   │
-   ▼
-3. Thompson's Construction (ε-NFA) (Stage 2 - Upcoming)
-   │
-   ▼
-4. Subset Construction via ε-Closure (DFA) (Stage 3 - Upcoming)
-   │
-   ▼
-5. Hopcroft / Table-Filling Minimization (Min-DFA) (Stage 4 - Upcoming)
-   │
-   ▼
-6. Product Automaton & BFS Shortest Counterexample (Stage 5 - Upcoming)
+Regex A / Regex B
+  ↓  Phase 1 (complete)
+Tokenizer → Validator → Explicit Concat → Shunting-Yard Postfix
+  ↓  Phase 2 (complete)
+Thompson's Construction → ε-NFA visualization
+  ↓  Phase 3 (next)
+ε-Closure / Subset Construction → DFA
+  ↓  Phase 4
+Hopcroft / Table-Filling → Minimized DFA
+  ↓  Phase 5
+Product Automaton + BFS → Language Equivalence + Shortest Counterexample
 ```
 
 ---
 
-## 📐 Supported Regular Expression Grammar
+## Supported Grammar
 
-The Phase 1 frontend supports standard regular language operations with strict mathematical precedence:
+| Precedence | Operator | Meaning | Example |
+|:---:|:---:|:---|:---:|
+| 3 (highest) | `*` | Kleene star (postfix unary) | `a*` |
+| 2 | `.` | Concatenation (implicit; made explicit internally) | `ab` → `a.b` |
+| 1 (lowest) | `\|` | Union / alternation | `a\|b` |
+| — | `()` | Grouping | `(a\|b)*` |
 
-| Precedence | Operator | Description | Associativity | Example |
-| :---: | :---: | :---: | :---: | :---: |
-| **3** (Highest) | `*` | Kleene Star (unary postfix) | Right/Postfix | `a*` |
-| **2** | `.` | Concatenation (implicit or explicit) | Left-to-right | `ab` $\to$ `a.b` |
-| **1** (Lowest) | `\|` | Alternation / Union | Left-to-right | `a\|b` |
-| **Grouping** | `( )` | Parentheses for subexpression precedence | N/A | `(a\|b)*` |
-
-### Supported Symbols
-- **Literals**: Alphanumeric characters `[a-zA-Z0-9]`, and Greek epsilon `ε`.
-- **Operators**: `(`, `)`, `|`, `*`.
-- **Whitespace**: Skipped transparently while preserving precise source character offsets for diagnostics.
+Literals: `a–z`, `A–Z`, `0–9`, `ε`.
 
 ---
 
-## ⚙️ Core Compiler Algorithms (Phase 1)
+## Phase 1 — Regex Frontend
 
-### 1. Tokenizer (`src/automata/regex/tokenizer.ts`)
-Produces strongly typed tokens (`LITERAL`, `UNION`, `STAR`, `LPAREN`, `RPAREN`) while recording the zero-indexed offset of each character for syntax error reporting.
+### Tokenizer (`src/automata/regex/tokenizer.ts`)
+Scans the input character-by-character.  Each character produces a typed token (`LITERAL`, `UNION`, `STAR`, `LPAREN`, `RPAREN`) with its zero-based source position for accurate error messages.
 
-### 2. Syntactic Validator (`src/automata/regex/validator.ts`)
-Performs static analysis on the token stream to detect:
-- Empty expressions
-- Unbalanced parentheses (`(`, `)`)
-- Redundant empty subexpressions `()`
-- Invalid operator placement (e.g. `|a`, `a|`, `a||b`, `*a`, `(*a)`)
+### Validator (`src/automata/regex/validator.ts`)
+Walks the token list to detect: empty expressions, unbalanced parentheses, leading/trailing/consecutive union, star without an operand, and empty sub-expressions `()`.
 
-### 3. Implicit Concatenation (`src/automata/regex/concatenation.ts`)
-Inserts explicit `.` tokens between adjacent subexpressions where concatenation is implied:
-- Token $T_1$ can end an operand: `LITERAL`, `STAR`, `RPAREN`
-- Token $T_2$ can start an operand: `LITERAL`, `LPAREN`
-- Example: `(a|b)*abb` $\to$ `(a|b)*.a.b.b`
+### Explicit Concatenation (`src/automata/regex/concatenation.ts`)
+Inserts a synthetic `CONCAT` (`.`) token between any two adjacent tokens where the left token can end an expression (LITERAL, STAR, RPAREN) and the right token can start one (LITERAL, LPAREN).
 
-### 4. Shunting-Yard Postfix Converter (`src/automata/regex/postfix.ts`)
-Converts the infix token stream into Reverse Polish Notation (postfix) using Dijkstra's Shunting-Yard algorithm adapted for regular expressions:
-- Literal operands are output immediately.
-- `*` is a unary postfix operator that immediately attaches to the preceding subexpression on the output stack.
-- Binary operators (`.` and `|`) maintain stack discipline based on precedence and left-associativity.
-- Example: `(a|b)*abb` $\to$ `ab|*a.b.b.`
+```
+(a|b)*abb  →  (a|b)*.a.b.b
+```
+
+### Postfix / Shunting-Yard (`src/automata/regex/postfix.ts`)
+Converts the infix token stream to postfix (Reverse Polish Notation) using Dijkstra's Shunting-Yard algorithm.  Operator precedences: `*` > `.` > `|`.
+
+```
+(a|b)*abb  →  ab|*a.b.b.
+```
 
 ---
 
-## 📁 Project Structure
+## Phase 2 — Thompson's Construction (ε-NFA)
+
+### Why postfix?
+A postfix stream maps directly onto Thompson's "NFA fragment stack" pattern.  Each operand token pushes a new fragment; each operator pops fragments, composes them, and pushes the result.  No AST or recursion needed — single O(n) pass.
+
+### Data structures (`src/automata/nfa/types.ts`)
+```ts
+type StateId = number;
+
+interface Transition {
+  from: StateId;
+  to: StateId;
+  symbol: string | null;   // null means ε-transition
+}
+
+interface NFA {
+  states: StateId[];
+  startState: StateId;
+  acceptState: StateId;    // Thompson NFAs always have exactly one accept state
+  transitions: Transition[];
+  alphabet: string[];
+}
+```
+
+State IDs are plain integers assigned monotonically starting from `q0` per NFA.  Each NFA is built with its own counter, so `q0` always refers to the NFA's own start state, making viva explanations straightforward.
+
+### Thompson rules (`src/automata/nfa/thompson.ts`)
+
+**Literal `a`**
+```
+q0 –a→ q1
+```
+Two states, one transition.
+
+**Concatenation `AB`**
+Pop fragment B, then A.  Connect A's accept to B's start via ε.
+```
+A.accept –ε→ B.start
+result: start = A.start, accept = B.accept
+```
+
+**Union `A|B`**
+Pop B, then A.  Create new start `qs` and accept `qa`.
+```
+qs –ε→ A.start      qs –ε→ B.start
+A.accept –ε→ qa     B.accept –ε→ qa
+```
+
+**Kleene Star `A*`**
+Pop A.  Create new start `qs` and accept `qa`.
+```
+qs –ε→ qa            (bypass: zero repetitions)
+qs –ε→ A.start       (enter loop)
+A.accept –ε→ A.start (repeat)
+A.accept –ε→ qa      (exit loop)
+```
+
+**Time complexity:** O(n) — each postfix token processed exactly once; each rule adds O(1) states and transitions.
+
+### Construction steps
+The builder records a `ThompsonStep` for every operator applied: the operator type, the subject token, a human-readable description, and which states/transitions were newly introduced.  The UI surfaces these in a collapsible **Construction Steps** panel per NFA.
+
+---
+
+## Project Structure
 
 ```
 src/
 ├── automata/
-│   └── regex/
-│       ├── types.ts          # Token and ProcessedRegexResult types
-│       ├── tokenizer.ts      # Lexical analysis and position tracking
-│       ├── validator.ts      # Syntax and operator validation
-│       ├── concatenation.ts  # Explicit concatenation insertion
-│       ├── postfix.ts        # Shunting-yard postfix conversion
-│       ├── index.ts          # High-level compiler facade
-│       └── __tests__/
-│           └── regex.test.ts # Vitest suite (41 tests)
+│   ├── regex/
+│   │   ├── types.ts            # Token types, ProcessedRegexResult
+│   │   ├── tokenizer.ts        # Lexical analysis
+│   │   ├── validator.ts        # Syntax validation
+│   │   ├── concatenation.ts    # Implicit → explicit concatenation
+│   │   ├── postfix.ts          # Shunting-Yard postfix conversion
+│   │   ├── index.ts            # processRegex() facade
+│   │   └── __tests__/regex.test.ts
+│   └── nfa/
+│       ├── types.ts            # NFA, Transition, ThompsonStep, StateId
+│       ├── thompson.ts         # Thompson's Construction algorithm
+│       ├── index.ts
+│       └── __tests__/thompson.test.ts
 ├── components/
-│   ├── Header.tsx            # Academic navbar with course metadata
-│   ├── TabNavigation.tsx     # Stage navigation tabs (Input, NFA, DFA, Min-DFA, Equivalence)
-│   ├── RegexInputCard.tsx    # Dual regex inputs with syntax error pointers
-│   ├── InputSection.tsx      # Main input workspace, presets & actions
-│   ├── DebugSection.tsx      # Intermediate representations inspector
-│   └── PlaceholderTab.tsx    # Upcoming stage descriptions & placeholders
+│   ├── automata/
+│   │   ├── AutomatonGraph.tsx  # React Flow graph renderer
+│   │   ├── NFAPanel.tsx        # Graph + table + steps for one NFA
+│   │   ├── TransitionTable.tsx # Collapsible transition table
+│   │   └── ConstructionSteps.tsx # Collapsible step inspector
+│   ├── Header.tsx
+│   ├── TabNavigation.tsx
+│   ├── RegexInputRow.tsx       # Flat regex input with error display
+│   ├── LexerInspector.tsx      # Collapsible lexer debug view
+├── pages/
+│   ├── InputTab.tsx            # Input workspace with presets
+│   ├── NFATab.tsx              # ε-NFA visualization page
+│   └── PlaceholderTab.tsx      # DFA / Min-DFA / Equivalence stubs
+├── utils/
+│   └── nfaToGraph.ts           # NFA → React Flow nodes/edges (data only)
 ├── types/
-│   └── pipeline.ts           # Pipeline stage definitions
-├── App.tsx                   # Top-level state and layout
-├── index.css                 # Tailwind CSS v4 styling
-└── main.tsx                  # Application entry point
+│   └── pipeline.ts
+├── App.tsx
+└── index.css
 ```
 
 ---
 
-## 🧪 Testing & Verification
-
-Run the automated test suite:
+## Running the Project
 
 ```bash
-npm test
+npm install
+npm run dev      # http://localhost:5173
+npm test         # 71 tests (41 Phase 1 + 30 Phase 2)
+npm run build    # production bundle
 ```
 
-41 unit tests test both valid expressions (`a`, `ab`, `a|b`, `a*`, `(a|b)*`, `(a|b)*abb`, `a(b|c)*`, numbers) and invalid expressions (`""`, `(`, `a|`, `|a`, `a||b`, `*a`, `(a|b`, `a(b))`, unsupported characters) with character-precise error positions.
+---
 
-To build the production bundle:
+## Stage 3 — Next Steps
 
-```bash
-npm run build
-```
-
-To run the local development server:
-
-```bash
-npm run dev
-```
+Implement **ε-NFA → DFA via subset construction**:
+1. Compute `ε-closure(state)` for every reachable state set.
+2. Build the powerset DFA: each DFA state is a *set* of NFA states.
+3. Mark a DFA state as accepting if it contains the NFA's accept state.
+4. Visualize the resulting DFA using the same `AutomatonGraph` component.
