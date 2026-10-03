@@ -1,84 +1,80 @@
 import React, { useState } from 'react';
 import type { MinimizationStep } from '../../automata/minimization/types';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { AccordionSection } from './AccordionSection';
 
 interface MinimizationStepsProps {
   steps: MinimizationStep[];
+  expanded?: boolean;
+  onToggle?: () => void;
 }
 
-export const MinimizationSteps: React.FC<MinimizationStepsProps> = ({ steps }) => {
-  const [open, setOpen] = useState(false);
+const TYPE_COLOR: Record<string, string> = {
+  REACHABILITY:       'var(--a)',
+  INITIAL_PARTITION:  '#C084FC',
+  SPLIT:              'var(--warn)',
+  CONVERGENCE:        'var(--ok)',
+};
+
+export const MinimizationSteps: React.FC<MinimizationStepsProps> = ({ steps, expanded: extExpanded, onToggle: extToggle }) => {
+  const [localOpen, setLocalOpen] = useState(false);
+  const expanded = extExpanded !== undefined ? extExpanded : localOpen;
+  const onToggle = extToggle ?? (() => setLocalOpen(o => !o));
 
   return (
-    <div className="border border-slate-800 rounded overflow-hidden text-xs">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-3 py-2 bg-slate-900 text-slate-300 hover:bg-slate-800 transition"
-      >
-        <span className="font-medium font-mono">
-          Minimization Steps ({steps.length} steps)
-        </span>
-        {open ? <ChevronDown className="w-3.5 h-3.5 text-slate-500" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-500" />}
-      </button>
+    <AccordionSection
+      title="Hopcroft Minimization Steps"
+      badge={steps.length}
+      expanded={expanded}
+      onToggle={onToggle}
+    >
+      <div style={{ fontFamily: 'var(--font-mono)' }}>
+        {steps.map((step, i) => (
+          <div
+            key={step.stepNumber}
+            style={{
+              padding: '8px 14px',
+              borderBottom: '1px solid var(--border)',
+              background: i % 2 === 0 ? 'var(--bg)' : 'var(--s1)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 3 }}>
+              <span style={{ color: 'var(--t3)', fontSize: 10, minWidth: 18 }}>{step.stepNumber}.</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: TYPE_COLOR[step.type] ?? 'var(--t2)' }}>
+                {step.type}
+              </span>
+              {step.type === 'SPLIT' && step.splitDetails && (
+                <span style={{ fontSize: 11, color: 'var(--t3)' }}>
+                  on <span style={{ color: 'var(--warn)', fontWeight: 700 }}>'{step.splitDetails.symbol}'</span>
+                </span>
+              )}
+            </div>
 
-      {open && (
-        <div className="divide-y divide-slate-900 max-h-64 overflow-y-auto font-mono text-[11px]">
-          {steps.map((step) => {
-            const isReach = step.type === 'REACHABILITY';
-            const isInit = step.type === 'INITIAL_PARTITION';
-            const isSplit = step.type === 'SPLIT';
-            const isConv = step.type === 'CONVERGENCE';
+            <p style={{ fontSize: 10, color: 'var(--t3)', lineHeight: 1.4, margin: 0, paddingLeft: 26 }}>
+              {step.description}
+            </p>
 
-            return (
-              <div
-                key={step.stepNumber}
-                className="px-3 py-2 bg-slate-950 hover:bg-slate-900/60 transition"
-              >
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-slate-500 select-none">{step.stepNumber}.</span>
-                  {isReach && (
-                    <span className="text-sky-400 font-semibold">REACHABILITY</span>
-                  )}
-                  {isInit && (
-                    <span className="text-indigo-400 font-semibold">INITIAL PARTITION (P₀)</span>
-                  )}
-                  {isSplit && (
-                    <>
-                      <span className="text-amber-400 font-semibold">PARTITION SPLIT</span>
-                      {step.splitDetails && (
-                        <span className="text-slate-400">
-                          on symbol <span className="text-amber-300 font-semibold">'{step.splitDetails.symbol}'</span>
-                        </span>
-                      )}
-                    </>
-                  )}
-                  {isConv && (
-                    <span className="text-emerald-400 font-semibold">CONVERGENCE</span>
-                  )}
-                </div>
-
-                <p className="text-slate-400 text-[10px] leading-snug pl-4">
-                  {step.description}
-                </p>
-
-                {/* Partition representation preview */}
-                {step.partitions && step.partitions.length > 0 && !isReach && (
-                  <div className="flex flex-wrap gap-1 mt-1 pl-4">
-                    {step.partitions.map((b, i) => (
-                      <span
-                        key={i}
-                        className="px-1 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-800 text-[10px]"
-                      >
-                        {`{${b.join(', ')}}`}
-                      </span>
-                    ))}
-                  </div>
-                )}
+            {step.partitions && step.partitions.length > 0 && step.type !== 'REACHABILITY' && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6, paddingLeft: 26 }}>
+                {step.partitions.map((b, j) => (
+                  <span
+                    key={j}
+                    style={{
+                      fontSize: 10,
+                      padding: '2px 6px',
+                      borderRadius: 4,
+                      background: 'var(--s2)',
+                      color: 'var(--t2)',
+                      border: '1px solid var(--border)',
+                    }}
+                  >
+                    {`{${b.join(', ')}}`}
+                  </span>
+                ))}
               </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </AccordionSection>
   );
 };

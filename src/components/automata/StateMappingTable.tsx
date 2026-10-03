@@ -1,52 +1,82 @@
 import React, { useState } from 'react';
 import type { DFAState } from '../../automata/dfa/types';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { AccordionSection } from './AccordionSection';
 
 interface StateMappingTableProps {
   states: DFAState[];
+  expanded?: boolean;
+  onToggle?: () => void;
 }
 
-export const StateMappingTable: React.FC<StateMappingTableProps> = ({ states }) => {
-  const [open, setOpen] = useState(true);
+export const StateMappingTable: React.FC<StateMappingTableProps> = ({ states, expanded: extExpanded, onToggle: extToggle }) => {
+  const [localOpen, setLocalOpen] = useState(false);
+  const expanded = extExpanded !== undefined ? extExpanded : localOpen;
+  const onToggle = extToggle ?? (() => setLocalOpen(o => !o));
 
   return (
-    <div className="border border-slate-800 rounded overflow-hidden text-xs">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-3 py-2 bg-slate-900 text-slate-300 hover:bg-slate-800 transition"
+    <AccordionSection
+      title="DFA ↔ NFA State Subsets"
+      badge={`${states.length} states`}
+      expanded={expanded}
+      onToggle={onToggle}
+    >
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+          gap: 6,
+          padding: 12,
+        }}
       >
-        <span className="font-medium font-mono">DFA ↔ NFA State Subsets ({states.length} states)</span>
-        {open ? <ChevronDown className="w-3.5 h-3.5 text-slate-500" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-500" />}
-      </button>
+        {states.map(s => {
+          const subsetStr = s.nfaStates.length > 0
+            ? `{${s.nfaStates.map(q => `q${q}`).join(', ')}}`
+            : '∅';
+          const color = s.isAccepting ? 'var(--b)' : s.isDead ? 'var(--t3)' : 'var(--a)';
 
-      {open && (
-        <div className="p-3 bg-slate-950 font-mono text-[11px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-56 overflow-y-auto">
-          {states.map((s) => {
-            const subsetStr = s.nfaStates.length > 0
-              ? `{${s.nfaStates.map((q) => `q${q}`).join(', ')}}`
-              : '∅ (Trap)';
-            return (
-              <div
-                key={s.id}
-                className="flex items-center gap-2 p-1.5 rounded bg-slate-900/50 border border-slate-850 hover:bg-slate-900 transition"
-              >
-                <span className={`font-semibold shrink-0 ${s.isAccepting ? 'text-cyan-300' : s.isDead ? 'text-slate-500' : 'text-indigo-300'}`}>
-                  {s.id}
+          return (
+            <div
+              key={s.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '6px 10px',
+                borderRadius: 'var(--r-sm)',
+                background: 'var(--s1)',
+                border: '1px solid var(--border)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 11,
+                minWidth: 0,
+              }}
+            >
+              <span style={{ color, fontWeight: 700, flexShrink: 0 }}>{s.id}</span>
+              <span style={{ color: 'var(--t3)' }}>=</span>
+              <span style={{ color: s.isDead ? 'var(--t3)' : 'var(--t2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {subsetStr}
+              </span>
+              {s.isAccepting && (
+                <span
+                  style={{
+                    marginLeft: 'auto',
+                    fontSize: 9,
+                    padding: '1px 5px',
+                    borderRadius: 3,
+                    background: 'color-mix(in srgb, var(--b) 12%, transparent)',
+                    color: 'var(--b)',
+                    border: '1px solid color-mix(in srgb, var(--b) 30%, transparent)',
+                    flexShrink: 0,
+                    letterSpacing: '0.04em',
+                    fontWeight: 600,
+                  }}
+                >
+                  accept
                 </span>
-                <span className="text-slate-600">=</span>
-                <span className={`truncate ${s.isDead ? 'text-slate-500 italic' : 'text-slate-300'}`}>
-                  {subsetStr}
-                </span>
-                {s.isAccepting && (
-                  <span className="ml-auto text-[9px] px-1 rounded bg-cyan-950 text-cyan-400 border border-cyan-800 shrink-0">
-                    accept
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </AccordionSection>
   );
 };

@@ -1,46 +1,90 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { NFA, ThompsonStep } from '../../automata/nfa/types';
 import { AutomatonGraph } from './AutomatonGraph';
 import { TransitionTable } from './TransitionTable';
 import { ConstructionSteps } from './ConstructionSteps';
 
 interface NFAPanelProps {
-  label: string;         // e.g. "Regex A"
-  regexStr: string;      // the original regex string
+  label: string;
+  regexStr: string;
   nfa: NFA;
   steps: ThompsonStep[];
   accent: 'indigo' | 'teal';
 }
 
 export const NFAPanel: React.FC<NFAPanelProps> = ({ label, regexStr, nfa, steps, accent }) => {
-  const accentClass = accent === 'indigo' ? 'text-indigo-400' : 'text-teal-400';
-  const borderClass = accent === 'indigo' ? 'border-indigo-500/20' : 'border-teal-500/20';
+  const [expanded, setExpanded] = useState<'table' | 'steps' | null>(null);
+  const accentColor = accent === 'indigo' ? 'var(--a)' : 'var(--b)';
+  const borderColor = accent === 'indigo' ? 'color-mix(in srgb, var(--a) 20%, transparent)' : 'color-mix(in srgb, var(--b) 20%, transparent)';
 
   return (
-    <div className={`border ${borderClass} border-b-0 border-x border-t`} style={{ borderRadius: 4 }}>
-      {/* Panel header */}
-      <div className="border-b border-slate-800 px-4 py-3 flex items-center justify-between">
-        <div>
-          <span className={`font-mono text-xs font-semibold ${accentClass} mr-2`}>{label}</span>
-          <span className="font-mono text-sm text-slate-200">{regexStr}</span>
+    <div
+      style={{
+        border: `1px solid ${borderColor}`,
+        borderRadius: 'var(--r-md)',
+        overflow: 'hidden',
+        background: 'var(--s1)',
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          borderBottom: '1px solid var(--border)',
+          padding: '10px 14px',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 8,
+          background: 'var(--s2)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span
+            style={{
+              fontSize: 10,
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 600,
+              color: accentColor,
+              padding: '2px 6px',
+              borderRadius: 4,
+              background: `${accentColor}18`,
+              border: `1px solid ${accentColor}30`,
+              letterSpacing: '0.04em',
+            }}
+          >
+            {label}
+          </span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--t1)', fontWeight: 500 }}>
+            {regexStr}
+          </span>
         </div>
-        <div className="text-[11px] font-mono text-slate-500 flex gap-3">
-          <span>states: <span className="text-slate-300">{nfa.states.length}</span></span>
-          <span>transitions: <span className="text-slate-300">{nfa.transitions.length}</span></span>
-          <span>start: <span className="text-indigo-300">q{nfa.startState}</span></span>
-          <span>accept: <span className="text-teal-300">q{nfa.acceptState}</span></span>
+        <div
+          style={{
+            display: 'flex',
+            gap: 12,
+            fontSize: 11,
+            fontFamily: 'var(--font-mono)',
+            color: 'var(--t3)',
+            flexWrap: 'wrap',
+          }}
+        >
+          <span>states <span style={{ color: 'var(--t1)' }}>{nfa.states.length}</span></span>
+          <span>transitions <span style={{ color: 'var(--t1)' }}>{nfa.transitions.length}</span></span>
+          <span>start <span style={{ color: 'var(--a)' }}>q{nfa.startState}</span></span>
+          <span>accept <span style={{ color: 'var(--b)' }}>q{nfa.acceptState}</span></span>
         </div>
       </div>
 
       {/* Graph */}
-      <div className="p-3 bg-slate-950">
+      <div style={{ padding: 12, background: 'var(--bg)' }}>
         <AutomatonGraph nfa={nfa} />
       </div>
 
-      {/* Collapsible metadata */}
-      <div className="border-t border-slate-800 divide-y divide-slate-900">
-        <TransitionTable nfa={nfa} />
-        <ConstructionSteps steps={steps} />
+      {/* Collapsible sections */}
+      <div style={{ borderTop: '1px solid var(--border)' }}>
+        <TransitionTable nfa={nfa} expanded={expanded === 'table'} onToggle={() => setExpanded(expanded === 'table' ? null : 'table')} />
+        <ConstructionSteps steps={steps} expanded={expanded === 'steps'} onToggle={() => setExpanded(expanded === 'steps' ? null : 'steps')} />
       </div>
     </div>
   );

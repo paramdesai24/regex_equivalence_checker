@@ -1,60 +1,79 @@
 import React, { useState } from 'react';
 import type { ThompsonStep } from '../../automata/nfa/types';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { AccordionSection } from './AccordionSection';
 
 interface ConstructionStepsProps {
   steps: ThompsonStep[];
+  expanded?: boolean;
+  onToggle?: () => void;
 }
 
-const OPERATOR_COLOR: Record<ThompsonStep['operator'], string> = {
-  LITERAL: 'text-blue-400',
-  CONCAT: 'text-amber-400',
-  UNION: 'text-purple-400',
-  STAR: 'text-emerald-400',
+const OP_COLOR: Record<ThompsonStep['operator'], string> = {
+  LITERAL: 'var(--a)',
+  CONCAT:  'var(--b)',
+  UNION:   '#C084FC',
+  STAR:    'var(--ok)',
 };
 
-export const ConstructionSteps: React.FC<ConstructionStepsProps> = ({ steps }) => {
-  const [open, setOpen] = useState(false);
+export const ConstructionSteps: React.FC<ConstructionStepsProps> = ({ steps, expanded: extExpanded, onToggle: extToggle }) => {
+  const [localOpen, setLocalOpen] = useState(false);
+  const expanded = extExpanded !== undefined ? extExpanded : localOpen;
+  const onToggle = extToggle ?? (() => setLocalOpen(o => !o));
 
   return (
-    <div className="border border-slate-800 rounded overflow-hidden text-xs">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-3 py-2 bg-slate-900 text-slate-300 hover:bg-slate-800 transition"
-      >
-        <span className="font-medium">Construction Steps ({steps.length})</span>
-        {open ? <ChevronDown className="w-3.5 h-3.5 text-slate-500" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-500" />}
-      </button>
-
-      {open && (
-        <div className="divide-y divide-slate-900 max-h-64 overflow-y-auto">
-          {steps.map((step, i) => (
-            <div key={i} className="px-3 py-2 bg-slate-950 hover:bg-slate-900/60 transition">
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-slate-500 font-mono select-none">{i + 1}.</span>
-                <span className={`font-mono font-semibold ${OPERATOR_COLOR[step.operator]}`}>
-                  {step.operator}
-                </span>
-                <span className="font-mono text-slate-400">
-                  {step.subject === '.' ? 'concat' : step.subject === '|' ? 'union' : step.subject === '*' ? 'star' : `'${step.subject}'`}
-                </span>
-              </div>
-              <p className="text-slate-400 font-mono text-[10px] leading-snug pl-5">
-                {step.description}
-              </p>
-              {step.newStates.length > 0 && (
-                <div className="flex gap-1 mt-1 pl-5 flex-wrap">
-                  {step.newStates.map((s) => (
-                    <span key={s} className="px-1 rounded bg-slate-800 text-slate-300 font-mono text-[10px]">
-                      +q{s}
-                    </span>
-                  ))}
-                </div>
-              )}
+    <AccordionSection
+      title="Thompson Construction Steps"
+      badge={steps.length}
+      expanded={expanded}
+      onToggle={onToggle}
+    >
+      <div style={{ fontFamily: 'var(--font-mono)' }}>
+        {steps.map((step, i) => (
+          <div
+            key={i}
+            style={{
+              padding: '8px 14px',
+              borderBottom: '1px solid var(--border)',
+              background: i % 2 === 0 ? 'var(--bg)' : 'var(--s1)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+              <span style={{ color: 'var(--t3)', fontSize: 10, minWidth: 18 }}>{i + 1}.</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: OP_COLOR[step.operator] }}>
+                {step.operator}
+              </span>
+              <span style={{ fontSize: 11, color: 'var(--t2)' }}>
+                {step.subject === '.' ? 'concat'
+                 : step.subject === '|' ? 'union'
+                 : step.subject === '*' ? 'star'
+                 : `'${step.subject}'`}
+              </span>
             </div>
-          ))}
-        </div>
-      )}
-    </div>
+            <p style={{ fontSize: 10, color: 'var(--t3)', lineHeight: 1.4, margin: 0, paddingLeft: 26 }}>
+              {step.description}
+            </p>
+            {step.newStates.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4, paddingLeft: 26 }}>
+                {step.newStates.map(s => (
+                  <span
+                    key={s}
+                    style={{
+                      fontSize: 10,
+                      padding: '1px 5px',
+                      borderRadius: 4,
+                      background: 'var(--s2)',
+                      color: 'var(--t2)',
+                      border: '1px solid var(--border)',
+                    }}
+                  >
+                    +q{s}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </AccordionSection>
   );
 };

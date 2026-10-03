@@ -1,5 +1,5 @@
-import React from 'react';
-import { X } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { X, BookOpen } from 'lucide-react';
 
 interface HowItWorksModalProps {
   isOpen: boolean;
@@ -12,7 +12,7 @@ const PIPELINE_STEPS = [
     name: 'Regex Processing',
     algorithm: "Dijkstra's Shunting-Yard Algorithm",
     description:
-      'Scans character-by-character, verifies parenthesization and operator placement, inserts explicit concatenation operators (e.g. ab → a.b), and translates infix to postfix Reverse Polish Notation.',
+      'Scans character-by-character, verifies parenthesization and operator placement, inserts explicit concatenation operators (e.g. ab → a·b), and translates infix to postfix Reverse Polish Notation.',
   },
   {
     num: 2,
@@ -52,66 +52,222 @@ const PIPELINE_STEPS = [
 ];
 
 export const HowItWorksModal: React.FC<HowItWorksModalProps> = ({ isOpen, onClose }) => {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 100,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 16,
+        background: 'rgba(0, 0, 0, 0.7)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        animation: 'fadeIn 0.15s ease',
+      }}
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded shadow-xl overflow-hidden"
+        style={{
+          width: '100%',
+          maxWidth: 620,
+          background: 'var(--s0)',
+          border: '1px solid var(--border-2)',
+          borderRadius: 'var(--r-lg)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--border-2)',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          maxHeight: '85vh',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-950">
-          <div>
-            <h3 className="text-sm font-semibold text-slate-100">
-              Pipeline &amp; Formal Algorithms Overview
-            </h3>
-            <p className="text-[11px] text-slate-500 mt-0.5">
-              Principles of Compiler Design — Six-stage automata equivalence verification
-            </p>
+        {/* Header */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '16px 20px',
+            borderBottom: '1px solid var(--border)',
+            background: 'var(--s1)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 'var(--r-sm)',
+                background: 'color-mix(in srgb, var(--a) 15%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--a) 30%, transparent)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--a)',
+              }}
+            >
+              <BookOpen size={15} />
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>
+                Pipeline &amp; Formal Algorithms Overview
+              </h3>
+              <p style={{ margin: 0, fontSize: 11, color: 'var(--t3)' }}>
+                Principles of Compiler Design — Six-stage automata equivalence verification
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition"
+            style={{
+              padding: 5,
+              borderRadius: 'var(--r-sm)',
+              background: 'transparent',
+              border: '1px solid transparent',
+              color: 'var(--t3)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'color 0.15s, background 0.15s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--t1)';
+              e.currentTarget.style.background = 'var(--s2)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--t3)';
+              e.currentTarget.style.background = 'transparent';
+            }}
             aria-label="Close"
           >
-            <X className="w-4 h-4" />
+            <X size={16} />
           </button>
         </div>
 
-        <div className="p-5 space-y-3.5 max-h-[75vh] overflow-y-auto">
+        {/* Content list */}
+        <div
+          style={{
+            padding: '16px 20px',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+          }}
+        >
           {PIPELINE_STEPS.map((s) => (
             <div
               key={s.num}
-              className="p-3 border border-slate-800/80 rounded bg-slate-950/50 flex gap-3 text-xs"
+              style={{
+                display: 'flex',
+                gap: 12,
+                padding: '10px 12px',
+                borderRadius: 'var(--r-md)',
+                background: 'var(--s1)',
+                border: '1px solid var(--border)',
+              }}
             >
-              <div className="w-5 h-5 rounded border border-indigo-800 bg-indigo-950/50 text-indigo-300 font-mono flex items-center justify-center text-[10px] shrink-0 font-semibold">
+              <div
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: 'var(--r-xs)',
+                  background: 'color-mix(in srgb, var(--a) 15%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--a) 30%, transparent)',
+                  color: 'var(--a)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  marginTop: 1,
+                }}
+              >
                 {s.num}
               </div>
-              <div className="space-y-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-semibold text-slate-200">{s.name}</span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-slate-800 text-slate-400">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--t1)' }}>{s.name}</span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 10,
+                      padding: '1px 6px',
+                      borderRadius: 'var(--r-xs)',
+                      background: 'var(--s2)',
+                      border: '1px solid var(--border-2)',
+                      color: 'var(--t3)',
+                    }}
+                  >
                     {s.algorithm}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed">{s.description}</p>
+                <p style={{ margin: 0, fontSize: 11, color: 'var(--t2)', lineHeight: 1.5 }}>
+                  {s.description}
+                </p>
               </div>
             </div>
           ))}
 
-          <div className="p-3 rounded border border-slate-800 bg-slate-900/50 text-[11px] text-slate-400">
-            <span className="font-semibold text-slate-300">Equivalence Criterion: </span>
+          <div
+            style={{
+              padding: '10px 12px',
+              borderRadius: 'var(--r-md)',
+              background: 'color-mix(in srgb, var(--a) 6%, var(--s1))',
+              border: '1px solid color-mix(in srgb, var(--a) 25%, var(--border))',
+              fontSize: 11,
+              color: 'var(--t2)',
+              lineHeight: 1.5,
+              marginTop: 4,
+            }}
+          >
+            <span style={{ fontWeight: 600, color: 'var(--t1)' }}>Equivalence Criterion: </span>
             Two regular expressions are equivalent if and only if their accepted languages are identical (L(R₁) = L(R₂)). This holds iff no string is accepted by the symmetric-difference product automaton (L(R₁) △ L(R₂) = ∅).
           </div>
         </div>
 
-        <div className="px-5 py-3 border-t border-slate-800 bg-slate-950 flex justify-end">
+        {/* Footer */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            padding: '12px 20px',
+            borderTop: '1px solid var(--border)',
+            background: 'var(--s1)',
+          }}
+        >
           <button
             onClick={onClose}
-            className="px-3.5 py-1.5 text-xs rounded border border-slate-700 text-slate-300 hover:bg-slate-800 transition"
+            style={{
+              padding: '5px 14px',
+              borderRadius: 'var(--r-sm)',
+              background: 'var(--s2)',
+              border: '1px solid var(--border-2)',
+              color: 'var(--t1)',
+              fontSize: 12,
+              fontFamily: 'var(--font-sans)',
+              cursor: 'pointer',
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--s3)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--s2)')}
           >
             Close
           </button>

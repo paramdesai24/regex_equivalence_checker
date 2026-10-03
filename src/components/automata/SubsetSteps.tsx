@@ -1,58 +1,73 @@
 import React, { useState } from 'react';
 import type { SubsetConstructionStep } from '../../automata/dfa/types';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { AccordionSection } from './AccordionSection';
 
 interface SubsetStepsProps {
   steps: SubsetConstructionStep[];
+  expanded?: boolean;
+  onToggle?: () => void;
 }
 
-export const SubsetSteps: React.FC<SubsetStepsProps> = ({ steps }) => {
-  const [open, setOpen] = useState(false);
+export const SubsetSteps: React.FC<SubsetStepsProps> = ({ steps, expanded: extExpanded, onToggle: extToggle }) => {
+  const [localOpen, setLocalOpen] = useState(false);
+  const expanded = extExpanded !== undefined ? extExpanded : localOpen;
+  const onToggle = extToggle ?? (() => setLocalOpen(o => !o));
 
   return (
-    <div className="border border-slate-800 rounded overflow-hidden text-xs">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-3 py-2 bg-slate-900 text-slate-300 hover:bg-slate-800 transition"
-      >
-        <span className="font-medium font-mono">Subset Construction Steps ({steps.length})</span>
-        {open ? <ChevronDown className="w-3.5 h-3.5 text-slate-500" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-500" />}
-      </button>
-
-      {open && (
-        <div className="divide-y divide-slate-900 max-h-64 overflow-y-auto font-mono text-[11px]">
-          {steps.map((step) => {
-            const isStart = step.type === 'START';
-
-            return (
-              <div key={step.stepNumber} className="px-3 py-2 bg-slate-950 hover:bg-slate-900/60 transition">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-slate-500 select-none">{step.stepNumber}.</span>
-                  {isStart ? (
-                    <span className="text-indigo-400 font-semibold">START STATE</span>
-                  ) : (
-                    <>
-                      <span className="text-slate-400">Process</span>
-                      <span className="text-indigo-300 font-semibold">{step.sourceState}</span>
-                      <span className="text-slate-500">on</span>
-                      <span className="text-amber-300 font-semibold">'{step.symbol}'</span>
-                    </>
-                  )}
-                  {step.isNewState && (
-                    <span className="ml-auto text-[9px] px-1 rounded bg-indigo-950 text-indigo-400 border border-indigo-800">
-                      new state
-                    </span>
-                  )}
-                </div>
-
-                <p className="text-slate-400 text-[10px] leading-snug pl-4">
-                  {step.description}
-                </p>
+    <AccordionSection
+      title="Subset Construction Steps"
+      badge={steps.length}
+      expanded={expanded}
+      onToggle={onToggle}
+    >
+      <div style={{ fontFamily: 'var(--font-mono)' }}>
+        {steps.map((step, i) => {
+          const isStart = step.type === 'START';
+          return (
+            <div
+              key={step.stepNumber}
+              style={{
+                padding: '8px 14px',
+                borderBottom: '1px solid var(--border)',
+                background: i % 2 === 0 ? 'var(--bg)' : 'var(--s1)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                <span style={{ color: 'var(--t3)', fontSize: 10, minWidth: 18 }}>{step.stepNumber}.</span>
+                {isStart ? (
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--a)' }}>START</span>
+                ) : (
+                  <>
+                    <span style={{ fontSize: 11, color: 'var(--t3)' }}>Process</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--a)' }}>{step.sourceState}</span>
+                    <span style={{ fontSize: 11, color: 'var(--t3)' }}>on</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--warn)' }}>'{step.symbol}'</span>
+                  </>
+                )}
+                {step.isNewState && (
+                  <span
+                    style={{
+                      marginLeft: 'auto',
+                      fontSize: 9,
+                      padding: '1px 5px',
+                      borderRadius: 3,
+                      background: 'color-mix(in srgb, var(--a) 12%, transparent)',
+                      color: 'var(--a)',
+                      border: '1px solid color-mix(in srgb, var(--a) 30%, transparent)',
+                      fontWeight: 600,
+                    }}
+                  >
+                    new state
+                  </span>
+                )}
               </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
+              <p style={{ fontSize: 10, color: 'var(--t3)', lineHeight: 1.4, margin: 0, paddingLeft: 26 }}>
+                {step.description}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </AccordionSection>
   );
 };

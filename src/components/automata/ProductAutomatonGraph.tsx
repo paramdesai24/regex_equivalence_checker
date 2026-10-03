@@ -5,6 +5,7 @@ import ReactFlow, {
   type Node,
   type Edge,
   type NodeTypes,
+  type EdgeTypes,
   Handle,
   Position,
   MarkerType,
@@ -14,7 +15,38 @@ import 'reactflow/dist/style.css';
 import type { ProductAutomaton } from '../../automata/equivalence/types';
 import { productToGraph } from '../../utils/productToGraph';
 
-// ─── Custom node: product state pair ──────────────────────────────────────────
+// ─── Self-loop edge ───────────────────────────────────────────────────────────
+const ProductSelfLoopEdge: React.FC<{
+  id: string;
+  sourceX: number;
+  sourceY: number;
+  label?: string;
+  style?: React.CSSProperties;
+  markerEnd?: string;
+}> = ({ id, sourceX, sourceY, label, style, markerEnd }) => {
+  const d = `M ${sourceX} ${sourceY - 20} C ${sourceX - 40} ${sourceY - 65}, ${sourceX + 40} ${sourceY - 65}, ${sourceX} ${sourceY - 20}`;
+  const midX = sourceX;
+  const midY = sourceY - 55;
+  const stroke = (style as React.CSSProperties & { stroke?: string })?.stroke ?? 'var(--border-2)';
+  return (
+    <>
+      <path id={id} d={d} fill="none" style={{ stroke, strokeWidth: 1.5, ...style }} markerEnd={markerEnd} />
+      {label && (
+        <foreignObject x={midX - 20} y={midY - 10} width={40} height={20}>
+          <div style={{
+            fontSize: 10, fontFamily: 'var(--font-mono)', fontWeight: 600,
+            color: stroke, background: 'var(--bg)', padding: '0 3px',
+            textAlign: 'center', borderRadius: 2,
+          }}>
+            {label as string}
+          </div>
+        </foreignObject>
+      )}
+    </>
+  );
+};
+
+// ─── Product state node ───────────────────────────────────────────────────────
 interface ProductNodeData {
   label: string;
   isStart: boolean;
@@ -25,73 +57,52 @@ interface ProductNodeData {
 }
 
 const ProductNode: React.FC<{ data: ProductNodeData }> = ({ data }) => {
-  const isDist = data.isDistinguishing;
-  const onPath = data.isOnCounterexamplePath;
+  const { isDistinguishing: isDist, isOnCounterexamplePath: onPath, isStart } = data;
 
-  const borderStyle = isDist ? '2.5px double #f43f5e' : onPath ? '2px solid #f59e0b' : data.isStart ? '2px solid #6366f1' : '1.5px solid #334155';
-
-  const boxShadow = isDist
-    ? '0 0 10px rgba(244,63,94,0.3)'
-    : onPath
-    ? '0 0 10px rgba(245,158,11,0.25)'
-    : data.isStart
-    ? '0 0 8px rgba(99,102,241,0.25)'
-    : 'none';
-
-  const textColor = isDist ? '#fda4af' : onPath ? '#fde68a' : '#cbd5e1';
+  const borderColor = isDist ? 'var(--err)' : onPath ? 'var(--warn)' : isStart ? 'var(--a)' : 'var(--border-2)';
+  const bg         = isDist ? 'color-mix(in srgb, var(--err) 12%, var(--s1))' : onPath ? 'color-mix(in srgb, var(--warn) 8%, var(--s1))' : 'var(--s2)';
+  const textColor  = isDist ? 'var(--err)' : onPath ? 'var(--warn)' : 'var(--t2)';
 
   return (
     <div
-      title={
-        isDist
-          ? `${data.label} [DISTINGUISHING: A=${data.acceptingA ? 'Accept' : 'Reject'}, B=${data.acceptingB ? 'Accept' : 'Reject'}]`
-          : `${data.label} [A=${data.acceptingA ? 'Accept' : 'Reject'}, B=${data.acceptingB ? 'Accept' : 'Reject'}]`
-      }
+      title={`${data.label} [A=${data.acceptingA ? 'Accept' : 'Reject'}, B=${data.acceptingB ? 'Accept' : 'Reject'}]${isDist ? ' [DISTINGUISHING]' : ''}`}
       style={{
-        minWidth: 70,
-        height: 38,
-        borderRadius: 20,
-        padding: '0 8px',
+        minWidth: 72,
+        height: 36,
+        borderRadius: 18,
+        padding: '0 10px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         fontSize: 11,
-        fontFamily: 'monospace',
+        fontFamily: 'var(--font-mono)',
         fontWeight: 600,
-        background: isDist ? '#1f131d' : onPath ? '#1a160d' : '#0f172a',
+        background: bg,
         color: textColor,
-        border: borderStyle,
-        boxShadow,
+        border: `${isDist ? '2px solid' : '1.5px solid'} ${borderColor}`,
+        boxShadow: isDist ? `0 0 14px ${borderColor}30` : onPath ? `0 0 10px ${borderColor}25` : 'none',
         position: 'relative',
+        transition: 'box-shadow 200ms',
       }}
     >
       <Handle type="target" position={Position.Left} style={{ opacity: 0 }} />
       <Handle type="source" position={Position.Right} style={{ opacity: 0 }} />
-
-      {data.isStart && (
-        <span
-          style={{
-            position: 'absolute',
-            left: -18,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            color: '#6366f1',
-            fontSize: 14,
-            lineHeight: 1,
-          }}
-        >
-          →
-        </span>
+      {isStart && (
+        <span style={{
+          position: 'absolute', left: -22, top: '50%',
+          transform: 'translateY(-50%)',
+          color: 'var(--a)', fontSize: 15, lineHeight: 1,
+        }}>→</span>
       )}
-
       <span>{data.label}</span>
     </div>
   );
 };
 
 const NODE_TYPES: NodeTypes = { productState: ProductNode };
+const EDGE_TYPES: EdgeTypes = { selfconnecting: ProductSelfLoopEdge as never };
 
-// ─── Main Product Graph component ─────────────────────────────────────────────
+// ─── Main component ───────────────────────────────────────────────────────────
 interface ProductAutomatonGraphProps {
   productAutomaton: ProductAutomaton;
   counterexampleNodeIds?: string[];
@@ -125,6 +136,7 @@ export const ProductAutomatonGraph: React.FC<ProductAutomatonGraphProps> = ({
 
   const edges: Edge[] = gEdges.map((e) => {
     const onPath = e.isOnCounterexamplePath;
+    const strokeColor = onPath ? 'var(--warn)' : 'var(--border-2)';
     return {
       id: e.id,
       source: e.source,
@@ -134,23 +146,20 @@ export const ProductAutomatonGraph: React.FC<ProductAutomatonGraphProps> = ({
       type: e.isSelfLoop ? 'selfconnecting' : 'default',
       markerEnd: {
         type: MarkerType.ArrowClosed,
-        color: onPath ? '#f59e0b' : '#475569',
+        color: strokeColor,
         width: onPath ? 16 : 14,
         height: onPath ? 16 : 14,
       },
-      style: {
-        stroke: onPath ? '#f59e0b' : '#475569',
-        strokeWidth: onPath ? 2.5 : 1.5,
-      },
+      style: { stroke: strokeColor, strokeWidth: onPath ? 2 : 1.5 },
       labelStyle: {
-        fill: onPath ? '#fbbf24' : '#94a3b8',
+        fill: onPath ? 'var(--warn)' : 'var(--t2)',
         fontSize: 11,
-        fontFamily: 'monospace',
+        fontFamily: 'var(--font-mono)',
         fontWeight: 600,
       },
-      labelBgStyle: { fill: '#0f172a', fillOpacity: 0.9 },
-      labelBgPadding: [3, 5] as [number, number],
-      labelBgBorderRadius: 3,
+      labelBgStyle: { fill: 'var(--bg)', fillOpacity: 0.9 },
+      labelBgPadding: [4, 6] as [number, number],
+      labelBgBorderRadius: 4,
     };
   });
 
@@ -163,28 +172,27 @@ export const ProductAutomatonGraph: React.FC<ProductAutomatonGraphProps> = ({
       style={{
         width: '100%',
         height: 380,
-        background: '#0b1120',
-        borderRadius: 6,
-        border: '1px solid #1e293b',
+        borderRadius: 'var(--r-sm)',
+        border: '1px solid var(--border)',
+        overflow: 'hidden',
+        background: 'var(--s1)',
       }}
     >
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={NODE_TYPES}
+        edgeTypes={EDGE_TYPES}
         fitView
         fitViewOptions={{ padding: 0.3 }}
         onInit={onInit}
-        minZoom={0.25}
-        maxZoom={2.5}
+        minZoom={0.2}
+        maxZoom={3}
         attributionPosition="bottom-right"
         proOptions={{ hideAttribution: true }}
       >
-        <Background color="#1e293b" gap={24} variant={BackgroundVariant.Dots} size={1} />
-        <Controls
-          style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 4 }}
-          showInteractive={false}
-        />
+        <Background color="var(--border)" gap={28} variant={BackgroundVariant.Dots} size={1} />
+        <Controls showInteractive={false} />
       </ReactFlow>
     </div>
   );

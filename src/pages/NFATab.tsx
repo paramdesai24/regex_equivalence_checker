@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import type { ProcessedRegexResult } from '../automata/regex/types';
 import { buildNFA } from '../automata/nfa/thompson';
 import { NFAPanel } from '../components/automata/NFAPanel';
+import { ArrowRight, AlertCircle } from 'lucide-react';
 
 interface NFATabProps {
   resultA: ProcessedRegexResult | null;
@@ -29,43 +30,189 @@ export const NFATab: React.FC<NFATabProps> = ({ resultA, resultB, regexA, regexB
 
   if (hasNeither) {
     return (
-      <div className="py-16 text-center">
-        <p className="text-slate-500 text-sm">
-          Enter valid regular expressions in the{' '}
-          <button onClick={onGoToInput} className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 transition">
-            Input tab
-          </button>{' '}
-          to inspect their ε-NFAs.
+      <div
+        style={{
+          padding: '64px 24px',
+          textAlign: 'center',
+          background: 'var(--s0)',
+          border: '1px dashed var(--border-2)',
+          borderRadius: 'var(--r-lg)',
+          marginTop: 20,
+        }}
+      >
+        <div
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: '50%',
+            background: 'var(--s1)',
+            border: '1px solid var(--border)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 16px',
+            color: 'var(--t3)',
+          }}
+        >
+          <AlertCircle size={20} />
+        </div>
+        <p style={{ color: 'var(--t2)', fontSize: 13, marginBottom: 12 }}>
+          Enter valid regular expressions to inspect their ε-NFAs.
         </p>
+        <button
+          onClick={onGoToInput}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 12,
+            fontFamily: 'var(--font-sans)',
+            padding: '6px 14px',
+            borderRadius: 'var(--r-sm)',
+            background: 'var(--s1)',
+            border: '1px solid var(--border-2)',
+            color: 'var(--t1)',
+            cursor: 'pointer',
+            transition: 'background 0.15s, border-color 0.15s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--s2)';
+            e.currentTarget.style.borderColor = 'var(--border-hover)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'var(--s1)';
+            e.currentTarget.style.borderColor = 'var(--border-2)';
+          }}
+        >
+          Go to Input tab <ArrowRight size={13} />
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-0">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Section header */}
-      <div className="border-b border-slate-800 pb-3 mb-4 flex flex-wrap items-center justify-between gap-2">
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          paddingBottom: 14,
+          borderBottom: '1px solid var(--border)',
+        }}
+      >
         <div>
-          <h2 className="text-sm font-semibold text-slate-200">ε-NFA — Thompson's Construction</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Each NFA is built independently from its postfix token stream. ε denotes epsilon-transitions.
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <h2
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                color: 'var(--t1)',
+                letterSpacing: '-0.01em',
+                margin: 0,
+              }}
+            >
+              ε-NFA — Thompson's Construction
+            </h2>
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                fontWeight: 600,
+                color: 'var(--a)',
+                background: 'color-mix(in srgb, var(--a) 12%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--a) 25%, transparent)',
+                padding: '1px 6px',
+                borderRadius: 'var(--r-xs)',
+              }}
+            >
+              Stage 2
+            </span>
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--t3)', margin: '4px 0 0' }}>
+            Built incrementally from postfix tokens via Thompson fragments. ε denotes non-consuming transitions.
           </p>
         </div>
-        <div className="flex items-center gap-3 text-[11px] font-mono text-slate-600">
-          <span>Double circle = accept · Indigo = start</span>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+              color: 'var(--t3)',
+            }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: '50%',
+                  background: 'var(--a)',
+                }}
+              />
+              Start
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: '50%',
+                  border: '1.5px double var(--b)',
+                }}
+              />
+              Accept
+            </span>
+          </div>
+
           {onGoToDFA && (
             <button
               onClick={onGoToDFA}
-              className="px-2.5 py-1 text-xs font-sans rounded border border-indigo-800 bg-indigo-950/40 text-indigo-300 hover:bg-indigo-900/60 transition"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                padding: '5px 12px',
+                borderRadius: 'var(--r-sm)',
+                background: 'var(--s1)',
+                border: '1px solid var(--border-2)',
+                color: 'var(--t1)',
+                fontSize: 12,
+                fontFamily: 'var(--font-sans)',
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'background 0.15s, border-color 0.15s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--s2)';
+                e.currentTarget.style.borderColor = 'var(--border-hover)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'var(--s1)';
+                e.currentTarget.style.borderColor = 'var(--border-2)';
+              }}
             >
-              View DFA →
+              View DFA <ArrowRight size={13} />
             </button>
           )}
         </div>
       </div>
 
-      {/* Two panels: side-by-side on wide screens */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      {/* Two panels */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))',
+          gap: 16,
+        }}
+      >
         {nfaResultA ? (
           <NFAPanel
             label="Regex A"
@@ -75,9 +222,19 @@ export const NFATab: React.FC<NFATabProps> = ({ resultA, resultB, regexA, regexB
             accent="indigo"
           />
         ) : (
-          <div className="border border-slate-800 rounded p-6 text-center text-xs text-slate-500">
+          <div
+            style={{
+              padding: 24,
+              borderRadius: 'var(--r-md)',
+              background: 'var(--s0)',
+              border: '1px solid var(--border)',
+              textAlign: 'center',
+              fontSize: 12,
+              color: 'var(--t3)',
+            }}
+          >
             {resultA && !resultA.isValid
-              ? `Regex A has a syntax error: ${resultA.error?.message}`
+              ? `Regex A syntax error: ${resultA.error?.message}`
               : 'Regex A: not entered.'}
           </div>
         )}
@@ -91,9 +248,19 @@ export const NFATab: React.FC<NFATabProps> = ({ resultA, resultB, regexA, regexB
             accent="teal"
           />
         ) : (
-          <div className="border border-slate-800 rounded p-6 text-center text-xs text-slate-500">
+          <div
+            style={{
+              padding: 24,
+              borderRadius: 'var(--r-md)',
+              background: 'var(--s0)',
+              border: '1px solid var(--border)',
+              textAlign: 'center',
+              fontSize: 12,
+              color: 'var(--t3)',
+            }}
+          >
             {resultB && !resultB.isValid
-              ? `Regex B has a syntax error: ${resultB.error?.message}`
+              ? `Regex B syntax error: ${resultB.error?.message}`
               : 'Regex B: not entered.'}
           </div>
         )}

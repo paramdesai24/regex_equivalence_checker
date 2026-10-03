@@ -44,7 +44,16 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        background: 'var(--bg)',
+        color: 'var(--t1)',
+        fontFamily: 'var(--font-sans)',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <Header onOpenHowItWorks={() => setHowItWorksOpen(true)} />
       <HowItWorksModal isOpen={howItWorksOpen} onClose={() => setHowItWorksOpen(false)} />
       <TabNavigation
@@ -56,7 +65,16 @@ export function App() {
         equivalenceReady={equivalenceReady}
       />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-6">
+      <main
+        style={{
+          flex: 1,
+          maxWidth: 1280,
+          width: '100%',
+          margin: '0 auto',
+          padding: '20px 24px',
+          boxSizing: 'border-box',
+        }}
+      >
         {stage === 'input' && (
           <InputTab
             regexA={regexA}
@@ -113,10 +131,40 @@ export function App() {
         )}
       </main>
 
-      <footer className="border-t border-slate-900 py-3 px-6">
-        <div className="max-w-7xl mx-auto text-[11px] font-mono text-slate-700 flex items-center justify-between">
-          <span>Regex Equivalence Checker — Compiler Design Coursework</span>
-          <span>Phase 5: Language Equivalence &amp; Counterexample Complete</span>
+      <footer
+        style={{
+          borderTop: '1px solid var(--border)',
+          background: 'var(--s0)',
+          padding: '10px 24px',
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1280,
+            margin: '0 auto',
+            fontSize: 11,
+            fontFamily: 'var(--font-mono)',
+            color: 'var(--t3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 8,
+          }}
+        >
+          <span>Regex Equivalence Checker — Principles of Compiler Design</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: 'var(--g)',
+                display: 'inline-block',
+              }}
+            />
+            Pipeline: Shunting-Yard → Thompson → Subset → Hopcroft → Product BFS
+          </span>
         </div>
       </footer>
     </div>

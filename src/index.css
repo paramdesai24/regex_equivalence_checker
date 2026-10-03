@@ -1,19 +1,119 @@
 @import "tailwindcss";
+@import "@fontsource/geist/400.css";
+@import "@fontsource/geist/500.css";
+@import "@fontsource/geist/600.css";
+@import "@fontsource/geist-mono/400.css";
+@import "@fontsource/geist-mono/500.css";
 
-@layer base {
-  *, *::before, *::after { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: #020817;
-    color: #f1f5f9;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-    -webkit-font-smoothing: antialiased;
-  }
+/* ─── Design tokens ─────────────────────────────────────────────────────────── */
+:root {
+  --bg:        #0A0A0B;
+  --s1:        #111113;
+  --s2:        #18181B;
+  --s3:        #1F1F23;
+  --border:    #27272A;
+  --border-2:  #3F3F46;
+  --t1:        #FAFAFA;
+  --t2:        #A1A1AA;
+  --t3:        #52525B;
+  --a:         #818CF8;   /* indigo — Regex A */
+  --a-dim:     #312E81;
+  --a-muted:   #1E1B4B;
+  --b:         #2DD4BF;   /* teal — Regex B */
+  --b-dim:     #134E4A;
+  --b-muted:   #0D2E2A;
+  --ok:        #34D399;
+  --ok-muted:  #052e16;
+  --err:       #F87171;
+  --err-muted: #2d0e0e;
+  --warn:      #FBBF24;
+  --r-sm:      6px;
+  --r-md:      10px;
+  --font-sans: "Geist", system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Fira Code", monospace;
 }
 
-/* React Flow overrides */
-.react-flow__attribution { display: none; }
-.react-flow__controls { background: #0f172a !important; border: 1px solid #1e293b !important; border-radius: 4px !important; }
-.react-flow__controls-button { background: #0f172a !important; border-color: #1e293b !important; fill: #64748b !important; }
-.react-flow__controls-button:hover { background: #1e293b !important; }
-.react-flow__edge-path { stroke: #475569; stroke-width: 1.5; }
+/* ─── Base ───────────────────────────────────────────────────────────────────── */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--t1);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--a) 30%, transparent);
+    color: var(--t1);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--a);
+    outline-offset: 2px;
+    border-radius: var(--r-sm);
+  }
+
+  input, button, textarea, select { font-family: inherit; }
+}
+
+/* ─── Typography helpers ─────────────────────────────────────────────────────── */
+.mono { font-family: var(--font-mono); }
+
+/* ─── Collapsible accordion animation ───────────────────────────────────────── */
+.accordion-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 200ms ease;
+}
+.accordion-body.open {
+  grid-template-rows: 1fr;
+}
+.accordion-inner {
+  overflow: hidden;
+}
+
+/* ─── React Flow overrides ───────────────────────────────────────────────────── */
+.react-flow__attribution { display: none !important; }
+
+.react-flow__background { background: var(--s1) !important; }
+
+.react-flow__controls {
+  background: var(--s2) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--r-sm) !important;
+  box-shadow: none !important;
+  gap: 0 !important;
+}
+.react-flow__controls-button {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border) !important;
+  fill: var(--t3) !important;
+  color: var(--t3) !important;
+  width: 26px !important;
+  height: 26px !important;
+  padding: 4px !important;
+  transition: fill 120ms, color 120ms;
+}
+.react-flow__controls-button:last-child { border-bottom: none !important; }
+.react-flow__controls-button:hover { fill: var(--t1) !important; background: var(--s3) !important; }
+
+.react-flow__edge-path {
+  stroke: var(--border-2);
+  stroke-width: 1.5;
+}
+.react-flow__edge-text { font-family: var(--font-mono); }
+
+/* ─── Scrollbar ──────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--t3); }

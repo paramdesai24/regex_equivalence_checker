@@ -9,49 +9,67 @@ interface LexerInspectorProps {
   resultB: ProcessedRegexResult | null;
 }
 
-function RegexLexerCard({ label, result }: { label: string; result: ProcessedRegexResult | null }) {
+function tokenColor(t: Token): string {
+  if (t.type === 'LITERAL')      return 'var(--a)';
+  if (t.type === 'UNION')        return '#C084FC';
+  if (t.type === 'STAR')         return 'var(--warn)';
+  if (t.type === 'CONCAT')       return 'var(--b)';
+  return 'var(--t2)';
+}
+
+function RegexLexerCard({
+  label,
+  result,
+  accent,
+}: {
+  label: string;
+  result: ProcessedRegexResult | null;
+  accent: string;
+}) {
   if (!result) return null;
   return (
-    <div className="space-y-3 min-w-0">
-      <div className="text-[11px] font-mono text-slate-500">
-        {label}: <span className="text-slate-300">{result.raw}</span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }}>
+      <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--t3)' }}>
+        <span style={{ color: accent, fontWeight: 600 }}>{label}:</span>{' '}
+        <span style={{ color: 'var(--t1)' }}>{result.raw}</span>
         {result.isValid
-          ? <span className="ml-2 text-emerald-600">valid</span>
-          : <span className="ml-2 text-rose-500">invalid</span>}
+          ? <span style={{ marginLeft: 8, color: 'var(--ok)', fontSize: 10 }}>valid</span>
+          : <span style={{ marginLeft: 8, color: 'var(--err)', fontSize: 10 }}>invalid</span>
+        }
       </div>
 
       {result.isValid && (
         <>
-          {/* Explicit concat */}
-          <div className="flex items-baseline gap-2 text-[11px] font-mono">
-            <span className="text-slate-600 shrink-0">explicit:</span>
-            <span className="text-amber-400">{result.explicitConcatString}</span>
+          <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', display: 'flex', gap: 8, alignItems: 'baseline' }}>
+            <span style={{ color: 'var(--t3)', flexShrink: 0 }}>explicit:</span>
+            <span style={{ color: 'var(--warn)' }}>{result.explicitConcatString}</span>
           </div>
-          {/* Postfix */}
-          <div className="flex items-baseline gap-2 text-[11px] font-mono">
-            <span className="text-slate-600 shrink-0">postfix: </span>
-            <span className="text-emerald-400">{result.postfixString}</span>
+          <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', display: 'flex', gap: 8, alignItems: 'baseline' }}>
+            <span style={{ color: 'var(--t3)', flexShrink: 0 }}>postfix:</span>
+            <span style={{ color: 'var(--ok)' }}>{result.postfixString}</span>
           </div>
-          {/* Token stream */}
           <div>
-            <div className="text-[10px] text-slate-600 mb-1">tokens ({result.tokens.length})</div>
-            <div className="flex flex-wrap gap-1">
-              {result.tokens.map((t: Token, i) => {
-                const c =
-                  t.type === 'LITERAL' ? 'text-sky-400'
-                  : t.type === 'UNION' ? 'text-purple-400'
-                  : t.type === 'STAR' ? 'text-amber-400'
-                  : 'text-slate-400';
-                return (
-                  <span
-                    key={i}
-                    title={`${t.type} @ ${t.position}`}
-                    className={`font-mono text-[10px] ${c}`}
-                  >
-                    {t.value}
-                  </span>
-                );
-              })}
+            <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--t3)', marginBottom: 6 }}>
+              tokens ({result.tokens.length})
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+              {result.tokens.map((t: Token, i) => (
+                <span
+                  key={i}
+                  title={`${t.type} @ ${t.position}`}
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 11,
+                    color: tokenColor(t),
+                    padding: '1px 5px',
+                    borderRadius: 4,
+                    background: `${tokenColor(t)}18`,
+                    border: `1px solid ${tokenColor(t)}30`,
+                  }}
+                >
+                  {t.value}
+                </span>
+              ))}
             </div>
           </div>
         </>
@@ -66,20 +84,58 @@ export const LexerInspector: React.FC<LexerInspectorProps> = ({ labelA, resultA,
   if (!resultA && !resultB) return null;
 
   return (
-    <div className="border border-slate-800 rounded overflow-hidden">
+    <div
+      style={{
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--r-sm)',
+        overflow: 'hidden',
+      }}
+    >
       <button
+        id="lexer-inspector-toggle"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-4 py-2 bg-slate-900 text-xs text-slate-400 hover:bg-slate-800 transition"
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '9px 14px',
+          background: 'var(--s1)',
+          border: 'none',
+          cursor: 'pointer',
+          color: 'var(--t2)',
+          fontSize: 12,
+          fontWeight: 500,
+          transition: 'background 120ms',
+          textAlign: 'left',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.background = 'var(--s2)')}
+        onMouseLeave={e => (e.currentTarget.style.background = 'var(--s1)')}
       >
-        <span className="font-medium">Regex Processing Details (Tokens, Explicit Concat, Postfix)</span>
-        {open ? <ChevronDown className="w-3.5 h-3.5 text-slate-500" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-500" />}
+        <span>Regex Processing Details — Tokens · Explicit Concat · Postfix</span>
+        {open
+          ? <ChevronDown size={14} style={{ color: 'var(--t3)', flexShrink: 0 }} />
+          : <ChevronRight size={14} style={{ color: 'var(--t3)', flexShrink: 0 }} />
+        }
       </button>
-      {open && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-slate-950">
-          <RegexLexerCard label={labelA} result={resultA} />
-          <RegexLexerCard label={labelB} result={resultB} />
+
+      <div className={`accordion-body${open ? ' open' : ''}`}>
+        <div className="accordion-inner">
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+              gap: 20,
+              padding: 16,
+              background: 'var(--bg)',
+              borderTop: '1px solid var(--border)',
+            }}
+          >
+            <RegexLexerCard label={labelA} result={resultA} accent="var(--a)" />
+            <RegexLexerCard label={labelB} result={resultB} accent="var(--b)" />
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
