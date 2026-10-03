@@ -56,21 +56,24 @@ export function buildNFA(postfixTokens: Token[]): ThompsonResult {
     switch (token.type) {
       case 'LITERAL': {
         // ─── Literal rule ───────────────────────────────────────────────────
-        // Create q0 --symbol--> q1
+        // Create q0 --symbol--> q1 (or q0 --ε--> q1 if literal is empty string ε)
         const { q0, q1 } = makeFrag(next);
-        const t: Transition = { from: q0, to: q1, symbol: token.value };
+        const isEpsilon = token.value === 'ε';
+        const t: Transition = { from: q0, to: q1, symbol: isEpsilon ? null : token.value };
         const frag: NFAFragment = {
           startState: q0,
           acceptState: q1,
           transitions: [t],
           states: [q0, q1],
-          alphabet: new Set([token.value]),
+          alphabet: isEpsilon ? new Set() : new Set([token.value]),
         };
         stack.push(frag);
         steps.push({
           operator: 'LITERAL',
           subject: token.value,
-          description: `Create q${q0} –${token.value}→ q${q1}`,
+          description: isEpsilon
+            ? `Create q${q0} –ε→ q${q1} (empty string)`
+            : `Create q${q0} –${token.value}→ q${q1}`,
           newStates: [q0, q1],
           newTransitions: [t],
         });

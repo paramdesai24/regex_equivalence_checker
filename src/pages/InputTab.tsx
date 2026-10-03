@@ -17,10 +17,11 @@ interface InputTabProps {
 }
 
 const PRESETS = [
-  { label: 'Non-equiv', a: '(a|b)*', b: 'a*b*' },
-  { label: 'Star identity', a: '(a|b)*', b: '(a*b*)*' },
-  { label: 'Suffix pattern', a: '(a|b)*abb', b: '(a|b)*a(a|b)*' },
-  { label: 'Factoring', a: 'a(b|c)*', b: 'ab*|ac*' },
+  { label: 'Star identity (equiv)', a: '(a|b)*', b: '(a*b*)*' },
+  { label: 'Union commutativity (equiv)', a: 'a|b', b: 'b|a' },
+  { label: 'Star order difference (cx: ba)', a: '(a|b)*', b: 'a*b*' },
+  { label: 'Empty-string difference (cx: ε)', a: 'a*', b: 'aa*' },
+  { label: 'Suffix pattern (cx: abb)', a: '(a|b)*abb', b: '(a|b)*ab' },
 ];
 
 export const InputTab: React.FC<InputTabProps> = ({
@@ -40,9 +41,9 @@ export const InputTab: React.FC<InputTabProps> = ({
 
   return (
     <div className="space-y-5 max-w-4xl">
-      {/* Presets */}
+      {/* Demonstration Presets */}
       <div>
-        <div className="text-[11px] text-slate-600 mb-2 font-mono">presets:</div>
+        <div className="text-[11px] text-slate-500 mb-2 font-mono">demonstration presets:</div>
         <div className="flex flex-wrap gap-2">
           {PRESETS.map((p) => (
             <button

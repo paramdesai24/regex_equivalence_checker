@@ -5,6 +5,9 @@ interface TabNavigationProps {
   currentStage: PipelineStage;
   onSelectStage: (stage: PipelineStage) => void;
   nfaReady: boolean;
+  dfaReady?: boolean;
+  minDfaReady?: boolean;
+  equivalenceReady?: boolean;
 }
 
 interface TabDef {
@@ -14,23 +17,32 @@ interface TabDef {
 }
 
 const TABS: TabDef[] = [
-  { id: 'input',       label: 'Input',         implemented: true  },
-  { id: 'nfa',         label: 'ε-NFA',         implemented: true  },
-  { id: 'dfa',         label: 'DFA',            implemented: false },
-  { id: 'min-dfa',     label: 'Min-DFA',        implemented: false },
-  { id: 'equivalence', label: 'Equivalence',    implemented: false },
+  { id: 'input',       label: 'Input',         implemented: true },
+  { id: 'nfa',         label: 'ε-NFA',         implemented: true },
+  { id: 'dfa',         label: 'DFA',           implemented: true },
+  { id: 'min-dfa',     label: 'Min-DFA',       implemented: true },
+  { id: 'equivalence', label: 'Equivalence',   implemented: true },
 ];
 
 export const TabNavigation: React.FC<TabNavigationProps> = ({
   currentStage,
   onSelectStage,
   nfaReady,
+  dfaReady = nfaReady,
+  minDfaReady = dfaReady,
+  equivalenceReady = minDfaReady,
 }) => {
   return (
     <div className="border-b border-slate-800 bg-slate-950 px-6">
       <nav className="max-w-7xl mx-auto flex" aria-label="Pipeline stages">
         {TABS.map((tab, i) => {
           const isActive = currentStage === tab.id;
+          const isReady =
+            (tab.id === 'nfa' && nfaReady) ||
+            (tab.id === 'dfa' && dfaReady) ||
+            (tab.id === 'min-dfa' && minDfaReady) ||
+            (tab.id === 'equivalence' && equivalenceReady);
+
           return (
             <React.Fragment key={tab.id}>
               <button
@@ -45,7 +57,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                 `}
               >
                 {tab.label}
-                {tab.id === 'nfa' && nfaReady && !isActive && (
+                {isReady && !isActive && (
                   <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-indigo-400 align-middle" />
                 )}
                 {!tab.implemented && (

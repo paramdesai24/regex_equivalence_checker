@@ -71,8 +71,8 @@ export const LexerInspector: React.FC<LexerInspectorProps> = ({ labelA, resultA,
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center justify-between px-4 py-2 bg-slate-900 text-xs text-slate-400 hover:bg-slate-800 transition"
       >
-        <span className="font-medium">Lexer / Postfix Inspector</span>
-        {open ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+        <span className="font-medium">Regex Processing Details (Tokens, Explicit Concat, Postfix)</span>
+        {open ? <ChevronDown className="w-3.5 h-3.5 text-slate-500" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-500" />}
       </button>
       {open && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-slate-950">
