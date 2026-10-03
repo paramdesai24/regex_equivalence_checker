@@ -9,9 +9,10 @@ interface NFATabProps {
   regexA: string;
   regexB: string;
   onGoToInput: () => void;
+  onGoToDFA?: () => void;
 }
 
-export const NFATab: React.FC<NFATabProps> = ({ resultA, resultB, regexA, regexB, onGoToInput }) => {
+export const NFATab: React.FC<NFATabProps> = ({ resultA, resultB, regexA, regexB, onGoToInput, onGoToDFA }) => {
   const buildResult = (result: ProcessedRegexResult | null) => {
     if (!result || !result.isValid || result.postfixTokens.length === 0) return null;
     try {
@@ -43,15 +44,23 @@ export const NFATab: React.FC<NFATabProps> = ({ resultA, resultB, regexA, regexB
   return (
     <div className="space-y-0">
       {/* Section header */}
-      <div className="border-b border-slate-800 pb-3 mb-4 flex items-center justify-between">
+      <div className="border-b border-slate-800 pb-3 mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-sm font-semibold text-slate-200">ε-NFA — Thompson's Construction</h2>
           <p className="text-xs text-slate-500 mt-0.5">
             Each NFA is built independently from its postfix token stream. ε denotes epsilon-transitions.
           </p>
         </div>
-        <div className="text-[11px] font-mono text-slate-600">
-          Double circle = accept state · Indigo border = start state
+        <div className="flex items-center gap-3 text-[11px] font-mono text-slate-600">
+          <span>Double circle = accept · Indigo = start</span>
+          {onGoToDFA && (
+            <button
+              onClick={onGoToDFA}
+              className="px-2.5 py-1 text-xs font-sans rounded border border-indigo-800 bg-indigo-950/40 text-indigo-300 hover:bg-indigo-900/60 transition"
+            >
+              View DFA →
+            </button>
+          )}
         </div>
       </div>
 

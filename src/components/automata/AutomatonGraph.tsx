@@ -19,31 +19,39 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import type { NFA } from '../../automata/nfa/types';
+import type { DFA } from '../../automata/dfa/types';
 import { nfaToGraph } from '../../utils/nfaToGraph';
+import { dfaToGraph } from '../../utils/dfaToGraph';
 
-// ─── Custom node: plain state circle ─────────────────────────────────────────
+// ─── Custom node: state circle ────────────────────────────────────────────────
 interface StateNodeData {
   label: string;
   isStart: boolean;
   isAccept: boolean;
+  isDead?: boolean;
+  subsetLabel?: string;
 }
 
 const StateNode: React.FC<{ data: StateNodeData }> = ({ data }) => {
   return (
     <div
+      title={data.subsetLabel ? `${data.label} = ${data.subsetLabel}` : data.label}
       style={{
         width: 48,
         height: 48,
         borderRadius: '50%',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: 12,
+        fontSize: data.label.length > 3 ? 10 : 12,
         fontFamily: 'monospace',
         fontWeight: 600,
-        background: data.isAccept ? '#1e293b' : '#0f172a',
-        color: data.isAccept ? '#a5f3fc' : '#94a3b8',
-        border: data.isAccept
+        background: data.isDead ? '#090d16' : data.isAccept ? '#1e293b' : '#0f172a',
+        color: data.isDead ? '#64748b' : data.isAccept ? '#a5f3fc' : '#94a3b8',
+        border: data.isDead
+          ? '1.5px dashed #475569'
+          : data.isAccept
           ? '2.5px double #67e8f9'   // double border = accept state
           : data.isStart
           ? '2px solid #6366f1'      // indigo = start state
@@ -74,7 +82,7 @@ const StateNode: React.FC<{ data: StateNodeData }> = ({ data }) => {
           →
         </span>
       )}
-      {data.label}
+      <span>{data.label}</span>
     </div>
   );
 };
@@ -82,18 +90,34 @@ const StateNode: React.FC<{ data: StateNodeData }> = ({ data }) => {
 const NODE_TYPES: NodeTypes = { state: StateNode };
 
 // ─── Main component ───────────────────────────────────────────────────────────
-interface AutomatonGraphProps {
-  nfa: NFA;
+export interface AutomatonGraphProps {
+  nfa?: NFA;
+  dfa?: DFA;
+  hideDeadState?: boolean;
 }
 
-export const AutomatonGraph: React.FC<AutomatonGraphProps> = ({ nfa }) => {
-  const { nodes: gNodes, edges: gEdges } = useMemo(() => nfaToGraph(nfa), [nfa]);
+export const AutomatonGraph: React.FC<AutomatonGraphProps> = ({ nfa, dfa, hideDeadState = false }) => {
+  const { nodes: gNodes, edges: gEdges } = useMemo(() => {
+    if (dfa) {
+      return dfaToGraph(dfa, { hideDeadState });
+    }
+    if (nfa) {
+      return nfaToGraph(nfa);
+    }
+    return { nodes: [], edges: [] };
+  }, [nfa, dfa, hideDeadState]);
 
   const nodes: Node<StateNodeData>[] = gNodes.map((n) => ({
     id: n.id,
     type: 'state',
     position: { x: n.x, y: n.y },
-    data: { label: n.label, isStart: n.isStart, isAccept: n.isAccept },
+    data: {
+      label: n.label,
+      isStart: n.isStart,
+      isAccept: n.isAccept,
+      isDead: 'isDead' in n ? (n as { isDead?: boolean }).isDead : false,
+      subsetLabel: 'subsetLabel' in n ? (n as { subsetLabel?: string }).subsetLabel : undefined,
+    },
     draggable: true,
   }));
 
