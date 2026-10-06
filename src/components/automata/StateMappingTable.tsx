@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { DFAState } from '../../automata/dfa/types';
 import { AccordionSection } from './AccordionSection';
+import { Badge } from '../ui/badge';
 
 interface StateMappingTableProps {
   states: DFAState[];
@@ -8,10 +9,14 @@ interface StateMappingTableProps {
   onToggle?: () => void;
 }
 
-export const StateMappingTable: React.FC<StateMappingTableProps> = ({ states, expanded: extExpanded, onToggle: extToggle }) => {
+export const StateMappingTable: React.FC<StateMappingTableProps> = ({
+  states,
+  expanded: extExpanded,
+  onToggle: extToggle,
+}) => {
   const [localOpen, setLocalOpen] = useState(false);
   const expanded = extExpanded !== undefined ? extExpanded : localOpen;
-  const onToggle = extToggle ?? (() => setLocalOpen(o => !o));
+  const onToggle = extToggle ?? (() => setLocalOpen((o) => !o));
 
   return (
     <AccordionSection
@@ -20,58 +25,34 @@ export const StateMappingTable: React.FC<StateMappingTableProps> = ({ states, ex
       expanded={expanded}
       onToggle={onToggle}
     >
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-          gap: 6,
-          padding: 12,
-        }}
-      >
-        {states.map(s => {
-          const subsetStr = s.nfaStates.length > 0
-            ? `{${s.nfaStates.map(q => `q${q}`).join(', ')}}`
-            : '∅';
-          const color = s.isAccepting ? 'var(--b)' : s.isDead ? 'var(--t3)' : 'var(--a)';
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 p-3">
+        {states.map((s) => {
+          const subsetStr =
+            s.nfaStates.length > 0
+              ? `{${s.nfaStates.map((q) => `q${q}`).join(', ')}}`
+              : '∅';
 
           return (
             <div
               key={s.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '6px 10px',
-                borderRadius: 'var(--r-sm)',
-                background: 'var(--s1)',
-                border: '1px solid var(--border)',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 11,
-                minWidth: 0,
-              }}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-sm bg-background border border-border text-[13px] font-mono min-w-0"
             >
-              <span style={{ color, fontWeight: 700, flexShrink: 0 }}>{s.id}</span>
-              <span style={{ color: 'var(--t3)' }}>=</span>
-              <span style={{ color: s.isDead ? 'var(--t3)' : 'var(--t2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span className="font-semibold text-foreground shrink-0">{s.id}</span>
+              <span className="text-muted-foreground/60">=</span>
+              <span
+                className={`truncate ${
+                  s.isDead ? 'text-muted-foreground' : 'text-foreground'
+                }`}
+              >
                 {subsetStr}
               </span>
               {s.isAccepting && (
-                <span
-                  style={{
-                    marginLeft: 'auto',
-                    fontSize: 9,
-                    padding: '1px 5px',
-                    borderRadius: 3,
-                    background: 'color-mix(in srgb, var(--b) 12%, transparent)',
-                    color: 'var(--b)',
-                    border: '1px solid color-mix(in srgb, var(--b) 30%, transparent)',
-                    flexShrink: 0,
-                    letterSpacing: '0.04em',
-                    fontWeight: 600,
-                  }}
+                <Badge
+                  variant="outline"
+                  className="ml-auto text-xs px-1.5 py-0 border-emerald-300 text-emerald-700 bg-emerald-50/50 shrink-0 font-sans font-medium"
                 >
                   accept
-                </span>
+                </Badge>
               )}
             </div>
           );

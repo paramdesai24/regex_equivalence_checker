@@ -60,8 +60,8 @@ function layoutDFAStates(
     byLayer.get(l)!.push(s);
   }
 
-  const HGAP = 170;
-  const VGAP = 110;
+  const HGAP = 200;
+  const VGAP = 145;
   const positions = new Map<string, { x: number; y: number }>();
 
   for (const [layer, statesInLayer] of byLayer) {
@@ -79,7 +79,7 @@ function layoutDFAStates(
     const midX = (maxLayer * HGAP) / 2 + 60;
     positions.set(deadStateId, {
       x: midX,
-      y: 320,
+      y: 360,
     });
   }
 
@@ -134,7 +134,7 @@ export function dfaToGraph(
 
   const edges: GraphEdge[] = Array.from(edgeMap.entries()).map(([key, val], i) => {
     const [src, tgt] = key.split('->');
-    const sortedSymbols = Array.from(val.symbols).sort().join(',');
+    const sortedSymbols = Array.from(val.symbols).sort().join(', ');
     return {
       id: `dfa-e${i}-${key}`,
       source: src,

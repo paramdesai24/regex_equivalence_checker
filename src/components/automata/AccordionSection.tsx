@@ -1,8 +1,8 @@
-/**
- * Shared accordion section wrapper used by all collapsible table/steps components.
- */
 import React from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '../ui/collapsible';
+import { Badge } from '../ui/badge';
+import { cn } from '@/lib/utils';
 
 interface AccordionSectionProps {
   title: string;
@@ -10,7 +10,6 @@ interface AccordionSectionProps {
   expanded: boolean;
   onToggle: () => void;
   children: React.ReactNode;
-  /** If true, the content area uses overflow-x-auto (for tables). */
   overflow?: boolean;
 }
 
@@ -23,71 +22,42 @@ export const AccordionSection: React.FC<AccordionSectionProps> = ({
   overflow = false,
 }) => {
   return (
-    <div style={{ borderTop: '1px solid var(--border)' }}>
-      <button
-        onClick={onToggle}
-        style={{
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 8,
-          padding: '9px 14px',
-          background: 'var(--s1)',
-          border: 'none',
-          cursor: 'pointer',
-          transition: 'background 120ms',
-          textAlign: 'left',
-        }}
-        onMouseEnter={e => (e.currentTarget.style.background = 'var(--s2)')}
-        onMouseLeave={e => (e.currentTarget.style.background = 'var(--s1)')}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span
-            style={{
-              fontSize: 11,
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 500,
-              color: 'var(--t2)',
-            }}
-          >
-            {title}
-          </span>
-          {badge !== undefined && (
-            <span
-              style={{
-                fontSize: 10,
-                fontFamily: 'var(--font-mono)',
-                padding: '1px 5px',
-                borderRadius: 4,
-                background: 'var(--s3)',
-                color: 'var(--t3)',
-              }}
-            >
-              {badge}
-            </span>
-          )}
-        </div>
-        {expanded
-          ? <ChevronDown size={13} style={{ color: 'var(--t3)', flexShrink: 0 }} />
-          : <ChevronRight size={13} style={{ color: 'var(--t3)', flexShrink: 0 }} />
-        }
-      </button>
-
-      <div className={`accordion-body${expanded ? ' open' : ''}`}>
-        <div className="accordion-inner">
-          <div
-            style={{
-              overflowX: overflow ? 'auto' : undefined,
-              overflowY: 'auto',
-              maxHeight: 240,
-              background: 'var(--bg)',
-            }}
-          >
-            {children}
+    <Collapsible
+      open={expanded}
+      onOpenChange={onToggle}
+      className="border-t border-border bg-background"
+    >
+      <CollapsibleTrigger asChild>
+        <button
+          type="button"
+          className="w-full flex items-center justify-between gap-3 px-3.5 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors select-none cursor-pointer text-left"
+        >
+          <div className="flex items-center gap-2">
+            {expanded ? (
+              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            ) : (
+              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            )}
+            <span className="text-[13px] font-medium text-foreground">{title}</span>
           </div>
+          {badge !== undefined && (
+            <Badge variant="subtle" className="text-xs font-mono h-5 px-1.5 font-normal">
+              {badge}
+            </Badge>
+          )}
+        </button>
+      </CollapsibleTrigger>
+
+      <CollapsibleContent>
+        <div
+          className={cn(
+            'border-t border-border bg-muted/15 max-h-60 overflow-y-auto',
+            overflow && 'overflow-x-auto'
+          )}
+        >
+          {children}
         </div>
-      </div>
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 };

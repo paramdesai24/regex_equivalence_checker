@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import type { ProcessedRegexResult, Token } from '../automata/regex/types';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronRight, ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collapsible';
+import { Badge } from './ui/badge';
 
 interface LexerInspectorProps {
   labelA: string;
@@ -9,133 +11,113 @@ interface LexerInspectorProps {
   resultB: ProcessedRegexResult | null;
 }
 
-function tokenColor(t: Token): string {
-  if (t.type === 'LITERAL')      return 'var(--a)';
-  if (t.type === 'UNION')        return '#C084FC';
-  if (t.type === 'STAR')         return 'var(--warn)';
-  if (t.type === 'CONCAT')       return 'var(--b)';
-  return 'var(--t2)';
+function TokenChip({ token, index }: { token: Token; index: number }) {
+  return (
+    <span
+      key={index}
+      title={`${token.type} at index ${token.position}`}
+      className="inline-flex items-center gap-1 font-mono text-xs px-2 py-0.5 rounded-sm bg-muted text-foreground border border-border/70"
+    >
+      <span className="font-medium">{token.value}</span>
+      <span className="text-xs text-muted-foreground font-mono">{token.type.toLowerCase()}</span>
+    </span>
+  );
 }
 
-function RegexLexerCard({
+function RegexDetailsPane({
   label,
   result,
-  accent,
 }: {
   label: string;
   result: ProcessedRegexResult | null;
-  accent: string;
 }) {
   if (!result) return null;
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }}>
-      <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--t3)' }}>
-        <span style={{ color: accent, fontWeight: 600 }}>{label}:</span>{' '}
-        <span style={{ color: 'var(--t1)' }}>{result.raw}</span>
-        {result.isValid
-          ? <span style={{ marginLeft: 8, color: 'var(--ok)', fontSize: 10 }}>valid</span>
-          : <span style={{ marginLeft: 8, color: 'var(--err)', fontSize: 10 }}>invalid</span>
-        }
+    <div className="space-y-2.5 min-w-0">
+      <div className="flex items-center justify-between text-[13px]">
+        <span className="font-sans font-medium text-foreground">Regex {label}</span>
+        <Badge
+          variant={result.isValid ? 'outline' : 'destructive'}
+          className="text-xs font-mono font-medium px-2 py-0.5"
+        >
+          {result.isValid ? `${result.tokens.length} tokens` : 'invalid'}
+        </Badge>
       </div>
 
       {result.isValid && (
-        <>
-          <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', display: 'flex', gap: 8, alignItems: 'baseline' }}>
-            <span style={{ color: 'var(--t3)', flexShrink: 0 }}>explicit:</span>
-            <span style={{ color: 'var(--warn)' }}>{result.explicitConcatString}</span>
+        <div className="space-y-2 font-mono text-[13px] bg-muted/30 p-3 rounded-md border border-border/70 leading-relaxed">
+          <div className="flex items-baseline gap-2">
+            <span className="text-muted-foreground w-16 shrink-0 font-normal">raw:</span>
+            <span className="text-foreground select-all font-medium">{result.raw}</span>
           </div>
-          <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', display: 'flex', gap: 8, alignItems: 'baseline' }}>
-            <span style={{ color: 'var(--t3)', flexShrink: 0 }}>postfix:</span>
-            <span style={{ color: 'var(--ok)' }}>{result.postfixString}</span>
+          <div className="flex items-baseline gap-2">
+            <span className="text-muted-foreground w-16 shrink-0 font-normal">explicit:</span>
+            <span className="text-foreground select-all font-medium">{result.explicitConcatString}</span>
           </div>
-          <div>
-            <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--t3)', marginBottom: 6 }}>
-              tokens ({result.tokens.length})
+          <div className="flex items-baseline gap-2">
+            <span className="text-muted-foreground w-16 shrink-0 font-normal">postfix:</span>
+            <span className="text-foreground select-all font-medium">{result.postfixString}</span>
+          </div>
+
+          <div className="pt-2 border-t border-border/60">
+            <div className="text-xs text-muted-foreground mb-1.5 font-sans font-medium">
+              Token stream:
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-              {result.tokens.map((t: Token, i) => (
-                <span
-                  key={i}
-                  title={`${t.type} @ ${t.position}`}
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 11,
-                    color: tokenColor(t),
-                    padding: '1px 5px',
-                    borderRadius: 4,
-                    background: `${tokenColor(t)}18`,
-                    border: `1px solid ${tokenColor(t)}30`,
-                  }}
-                >
-                  {t.value}
-                </span>
+            <div className="flex flex-wrap gap-1">
+              {result.tokens.map((t, i) => (
+                <TokenChip key={i} token={t} index={i} />
               ))}
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
 }
 
-export const LexerInspector: React.FC<LexerInspectorProps> = ({ labelA, resultA, labelB, resultB }) => {
+export const LexerInspector: React.FC<LexerInspectorProps> = ({
+  labelA,
+  resultA,
+  labelB,
+  resultB,
+}) => {
   const [open, setOpen] = useState(false);
 
   if (!resultA && !resultB) return null;
 
   return (
-    <div
-      style={{
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--r-sm)',
-        overflow: 'hidden',
-      }}
+    <Collapsible
+      open={open}
+      onOpenChange={setOpen}
+      className="border border-border rounded-md bg-background overflow-hidden"
     >
-      <button
-        id="lexer-inspector-toggle"
-        onClick={() => setOpen((o) => !o)}
-        style={{
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '9px 14px',
-          background: 'var(--s1)',
-          border: 'none',
-          cursor: 'pointer',
-          color: 'var(--t2)',
-          fontSize: 12,
-          fontWeight: 500,
-          transition: 'background 120ms',
-          textAlign: 'left',
-        }}
-        onMouseEnter={e => (e.currentTarget.style.background = 'var(--s2)')}
-        onMouseLeave={e => (e.currentTarget.style.background = 'var(--s1)')}
-      >
-        <span>Regex Processing Details — Tokens · Explicit Concat · Postfix</span>
-        {open
-          ? <ChevronDown size={14} style={{ color: 'var(--t3)', flexShrink: 0 }} />
-          : <ChevronRight size={14} style={{ color: 'var(--t3)', flexShrink: 0 }} />
-        }
-      </button>
-
-      <div className={`accordion-body${open ? ' open' : ''}`}>
-        <div className="accordion-inner">
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-              gap: 20,
-              padding: 16,
-              background: 'var(--bg)',
-              borderTop: '1px solid var(--border)',
-            }}
-          >
-            <RegexLexerCard label={labelA} result={resultA} accent="var(--a)" />
-            <RegexLexerCard label={labelB} result={resultB} accent="var(--b)" />
+      <CollapsibleTrigger asChild>
+        <button
+          id="lexer-inspector-toggle"
+          type="button"
+          className="w-full flex items-center justify-between px-3.5 py-2.5 text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors select-none cursor-pointer tracking-normal leading-normal"
+        >
+          <div className="flex items-center gap-2">
+            {open ? (
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            ) : (
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            )}
+            <span>Regex processing details</span>
           </div>
+          <span className="text-xs text-muted-foreground font-normal">
+            Tokens · Explicit concat · Postfix
+          </span>
+        </button>
+      </CollapsibleTrigger>
+
+      <CollapsibleContent>
+        <div className="p-3.5 pt-2 border-t border-border grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/10">
+          <RegexDetailsPane label={labelA} result={resultA} />
+          <RegexDetailsPane label={labelB} result={resultB} />
         </div>
-      </div>
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 };

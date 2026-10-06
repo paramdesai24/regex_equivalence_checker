@@ -1,7 +1,10 @@
 import React from 'react';
 import { RegexInputRow } from '../components/RegexInputRow';
 import { LexerInspector } from '../components/LexerInspector';
+import { Button } from '../components/ui/button';
+import { Separator } from '../components/ui/separator';
 import type { ProcessedRegexResult } from '../automata/regex/types';
+import { ArrowRight } from 'lucide-react';
 
 interface InputTabProps {
   regexA: string;
@@ -17,11 +20,11 @@ interface InputTabProps {
 }
 
 const PRESETS = [
-  { label: 'Star identity',        tag: 'equiv',  a: '(a|b)*',    b: '(a*b*)*'   },
-  { label: 'Union commutativity',  tag: 'equiv',  a: 'a|b',       b: 'b|a'       },
-  { label: 'Star order diff',      tag: 'cx: ba', a: '(a|b)*',    b: 'a*b*'      },
-  { label: 'Empty-string diff',    tag: 'cx: ε',  a: 'a*',        b: 'aa*'       },
-  { label: 'Suffix pattern diff',  tag: 'cx: abb',a: '(a|b)*abb', b: '(a|b)*ab'  },
+  { label: 'Equivalent (star identity)', a: '(a|b)*', b: '(a*b*)*' },
+  { label: 'Equivalent (union commutativity)', a: 'a|b', b: 'b|a' },
+  { label: 'Non-equivalent (order diff)', a: '(a|b)*', b: 'a*b*' },
+  { label: 'Empty string difference', a: 'a*', b: 'aa*' },
+  { label: 'Suffix pattern difference', a: '(a|b)*abb', b: '(a|b)*ab' },
 ];
 
 export const InputTab: React.FC<InputTabProps> = ({
@@ -37,178 +40,119 @@ export const InputTab: React.FC<InputTabProps> = ({
   onGoToNFA,
 }) => {
   const canCompare = regexA.trim().length > 0 && regexB.trim().length > 0;
-  const bothValid  = resultA?.isValid && resultB?.isValid;
+  const bothValid = resultA?.isValid && resultB?.isValid;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 760 }}>
-
-      {/* Presets */}
-      <section>
-        <div
-          style={{
-            fontSize: 11,
-            fontFamily: 'var(--font-mono)',
-            color: 'var(--t3)',
-            marginBottom: 10,
-            letterSpacing: '0.04em',
-            textTransform: 'uppercase',
-          }}
-        >
-          Demonstration presets
-        </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {PRESETS.map((p) => (
-            <button
-              key={p.label}
-              onClick={() => { onChangeA(p.a); onChangeB(p.b); }}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '6px 12px',
-                borderRadius: 'var(--r-sm)',
-                border: '1px solid var(--border)',
-                background: 'var(--s1)',
-                cursor: 'pointer',
-                transition: 'border-color 120ms, background 120ms',
-              }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-2)';
-                (e.currentTarget as HTMLButtonElement).style.background = 'var(--s2)';
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)';
-                (e.currentTarget as HTMLButtonElement).style.background = 'var(--s1)';
-              }}
-            >
-              <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--t1)' }}>{p.label}</span>
-              <span
-                style={{
-                  fontSize: 10,
-                  fontFamily: 'var(--font-mono)',
-                  color: p.tag.startsWith('equiv') ? 'var(--ok)' : 'var(--warn)',
-                  padding: '1px 5px',
-                  borderRadius: 3,
-                  background: p.tag.startsWith('equiv')
-                    ? 'color-mix(in srgb, var(--ok) 12%, transparent)'
-                    : 'color-mix(in srgb, var(--warn) 12%, transparent)',
-                }}
-              >
-                {p.tag}
-              </span>
-              <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--t3)' }}>
-                {p.a} / {p.b}
-              </span>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Regex inputs */}
-      <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <RegexInputRow label="A" value={regexA} onChange={onChangeA} result={resultA} placeholder="e.g. (a|b)*abb" />
-        <RegexInputRow label="B" value={regexB} onChange={onChangeB} result={resultB} placeholder="e.g. a*b*" />
-      </section>
-
-      {/* Actions */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          paddingTop: 4,
-          borderTop: '1px solid var(--border)',
-        }}
-      >
-        <button
-          id="compare-btn"
-          onClick={onCompare}
-          disabled={!canCompare}
-          style={{
-            padding: '7px 18px',
-            borderRadius: 'var(--r-sm)',
-            border: `1px solid ${canCompare ? 'var(--a)' : 'var(--border)'}`,
-            background: canCompare ? 'color-mix(in srgb, var(--a) 15%, transparent)' : 'transparent',
-            color: canCompare ? 'var(--a)' : 'var(--t3)',
-            fontWeight: 600,
-            fontSize: 12,
-            cursor: canCompare ? 'pointer' : 'not-allowed',
-            transition: 'background 120ms, border-color 120ms',
-          }}
-          onMouseEnter={e => {
-            if (canCompare) (e.currentTarget as HTMLButtonElement).style.background = 'color-mix(in srgb, var(--a) 22%, transparent)';
-          }}
-          onMouseLeave={e => {
-            if (canCompare) (e.currentTarget as HTMLButtonElement).style.background = 'color-mix(in srgb, var(--a) 15%, transparent)';
-          }}
-        >
-          Compare →
-        </button>
-
-        {bothValid && hasCompared && (
-          <button
-            id="view-nfa-btn"
-            onClick={onGoToNFA}
-            style={{
-              padding: '7px 16px',
-              borderRadius: 'var(--r-sm)',
-              border: '1px solid var(--border-2)',
-              background: 'var(--s1)',
-              color: 'var(--t1)',
-              fontWeight: 500,
-              fontSize: 12,
-              cursor: 'pointer',
-              transition: 'background 120ms, border-color 120ms',
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLButtonElement).style.background = 'var(--s2)';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLButtonElement).style.background = 'var(--s1)';
-            }}
-          >
-            View ε-NFA →
-          </button>
-        )}
-
-        <button
-          id="reset-btn"
-          onClick={onReset}
-          style={{
-            padding: '7px 12px',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: 'var(--t3)',
-            fontSize: 12,
-            transition: 'color 120ms',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.color = 'var(--t1)')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'var(--t3)')}
-        >
-          Reset
-        </button>
-
-        <span
-          style={{
-            marginLeft: 'auto',
-            fontSize: 10,
-            fontFamily: 'var(--font-mono)',
-            color: 'var(--t3)',
-          }}
-        >
-          a–z · 0–9 · | · * · ( )
-        </span>
+    <div className="space-y-6 max-w-4xl">
+      {/* Page Title & Intro */}
+      <div className="space-y-1.5">
+        <h2 className="page-title">
+          Compare regular expressions
+        </h2>
+        <p className="page-subtitle">
+          Enter two regular expressions over alphanumeric characters with union (<code className="code-text font-medium text-foreground">|</code>), Kleene star (<code className="code-text font-medium text-foreground">*</code>), and parentheses grouping.
+        </p>
       </div>
 
-      {/* Lexer details */}
-      {hasCompared && (
-        <LexerInspector
-          labelA="A"
-          resultA={resultA}
-          labelB="B"
-          resultB={resultB}
+      {/* Preset shortcuts */}
+      <div className="space-y-2">
+        <div className="ui-label text-muted-foreground">
+          Presets
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {PRESETS.map((p) => (
+            <Button
+              key={p.label}
+              variant="outline"
+              size="default"
+              onClick={() => {
+                onChangeA(p.a);
+                onChangeB(p.b);
+              }}
+              className="h-8 px-3 text-[13px] font-normal text-muted-foreground hover:text-foreground"
+            >
+              <span>{p.label}</span>
+              <span className="font-mono text-xs text-muted-foreground/80 ml-1.5 font-normal">
+                ({p.a} vs {p.b})
+              </span>
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Dual Regex Inputs */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+        <RegexInputRow
+          label="A"
+          value={regexA}
+          onChange={onChangeA}
+          result={resultA}
+          placeholder="e.g. (a|b)*abb"
         />
+        <RegexInputRow
+          label="B"
+          value={regexB}
+          onChange={onChangeB}
+          result={resultB}
+          placeholder="e.g. a*b*"
+        />
+      </div>
+
+      {/* Primary Actions */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+        <div className="flex items-center gap-2.5">
+          <Button
+            id="compare-btn"
+            variant="default"
+            size="lg"
+            onClick={onCompare}
+            disabled={!canCompare}
+            className="text-[13px] font-medium px-4 h-9"
+          >
+            Compare expressions
+          </Button>
+
+          {bothValid && hasCompared && (
+            <Button
+              id="view-nfa-btn"
+              variant="outline"
+              size="lg"
+              onClick={onGoToNFA}
+              className="text-[13px] font-normal h-9 gap-1.5"
+            >
+              <span>View ε-NFA</span>
+              <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
+            </Button>
+          )}
+
+          <Button
+            id="reset-btn"
+            variant="ghost"
+            size="lg"
+            onClick={onReset}
+            className="text-muted-foreground hover:text-foreground text-[13px] font-normal h-9"
+          >
+            Reset
+          </Button>
+        </div>
+
+        <div className="ui-meta font-mono">
+          Alphabet: a–z, 0–9 · Operators: |, *, ( )
+        </div>
+      </div>
+
+      {/* Lexer / Postfix Inspector */}
+      {hasCompared && (
+        <div className="pt-2">
+          <LexerInspector
+            labelA="A"
+            resultA={resultA}
+            labelB="B"
+            resultB={resultB}
+          />
+        </div>
       )}
     </div>
   );

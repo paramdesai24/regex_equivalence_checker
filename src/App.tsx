@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Header } from './components/Header';
 import { TabNavigation } from './components/TabNavigation';
-import { HowItWorksModal } from './components/HowItWorksModal';
 import { InputTab } from './pages/InputTab';
 import { NFATab } from './pages/NFATab';
 import { DFATab } from './pages/DFATab';
@@ -15,7 +14,6 @@ export function App() {
   const [regexA, setRegexA] = useState('(a|b)*abb');
   const [regexB, setRegexB] = useState('a*b*');
   const [hasCompared, setHasCompared] = useState(true);
-  const [howItWorksOpen, setHowItWorksOpen] = useState(false);
 
   const resultA = useMemo(() => regexA.trim() ? processRegex(regexA) : null, [regexA]);
   const resultB = useMemo(() => regexB.trim() ? processRegex(regexB) : null, [regexB]);
@@ -44,18 +42,8 @@ export function App() {
   };
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: 'var(--bg)',
-        color: 'var(--t1)',
-        fontFamily: 'var(--font-sans)',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      <Header onOpenHowItWorks={() => setHowItWorksOpen(true)} />
-      <HowItWorksModal isOpen={howItWorksOpen} onClose={() => setHowItWorksOpen(false)} />
+    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
+      <Header />
       <TabNavigation
         currentStage={stage}
         onSelectStage={setStage}
@@ -65,16 +53,7 @@ export function App() {
         equivalenceReady={equivalenceReady}
       />
 
-      <main
-        style={{
-          flex: 1,
-          maxWidth: 1280,
-          width: '100%',
-          margin: '0 auto',
-          padding: '20px 24px',
-          boxSizing: 'border-box',
-        }}
-      >
+      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8 box-border">
         {stage === 'input' && (
           <InputTab
             regexA={regexA}
@@ -131,41 +110,8 @@ export function App() {
         )}
       </main>
 
-      <footer
-        style={{
-          borderTop: '1px solid var(--border)',
-          background: 'var(--s0)',
-          padding: '10px 24px',
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 1280,
-            margin: '0 auto',
-            fontSize: 11,
-            fontFamily: 'var(--font-mono)',
-            color: 'var(--t3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 8,
-          }}
-        >
-          <span>Regex Equivalence Checker — Principles of Compiler Design</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: '50%',
-                background: 'var(--g)',
-                display: 'inline-block',
-              }}
-            />
-            Pipeline: Shunting-Yard → Thompson → Subset → Hopcroft → Product BFS
-          </span>
-        </div>
+      <footer className="border-t border-border bg-background px-6 py-3">
+        <div className="max-w-7xl mx-auto" />
       </footer>
     </div>
   );

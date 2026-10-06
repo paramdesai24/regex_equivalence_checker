@@ -59,8 +59,8 @@ function layoutStates(
     byLayer.get(l)!.push(s);
   }
 
-  const HGAP = 160;
-  const VGAP = 100;
+  const HGAP = 190;
+  const VGAP = 135;
   const positions = new Map<StateId, { x: number; y: number }>();
   for (const [layer, statesInLayer] of byLayer) {
     const totalH = (statesInLayer.length - 1) * VGAP;
@@ -95,7 +95,7 @@ export function nfaToGraph(nfa: NFA): { nodes: GraphNode[]; edges: GraphEdge[] }
     const key = `${t.from}->${t.to}`;
     const sym = t.symbol ?? 'ε';
     if (edgeMap.has(key)) {
-      edgeMap.get(key)!.label += `,${sym}`;
+      edgeMap.get(key)!.label += `, ${sym}`;
     } else {
       edgeMap.set(key, { label: sym, isSelfLoop: t.from === t.to });
     }

@@ -4,119 +4,106 @@ import { AutomatonGraph } from './AutomatonGraph';
 import { StateMappingTable } from './StateMappingTable';
 import { DFATransitionTable } from './DFATransitionTable';
 import { SubsetSteps } from './SubsetSteps';
+import { Badge } from '../ui/badge';
+import { Switch } from '../ui/switch';
+import { Label } from '../ui/label';
 
 interface DFAPanelProps {
   label: string;
   regexStr: string;
   dfa: DFA;
   steps: SubsetConstructionStep[];
-  accent: 'indigo' | 'teal';
 }
 
-export const DFAPanel: React.FC<DFAPanelProps> = ({ label, regexStr, dfa, steps, accent }) => {
+export const DFAPanel: React.FC<DFAPanelProps> = ({
+  label,
+  regexStr,
+  dfa,
+  steps,
+}) => {
   const [showDeadState, setShowDeadState] = useState(true);
   const [expanded, setExpanded] = useState<'map' | 'table' | 'steps' | null>(null);
 
-  const accentColor  = accent === 'indigo' ? 'var(--a)' : 'var(--b)';
-  const borderColor  = accent === 'indigo' ? 'color-mix(in srgb, var(--a) 20%, transparent)' : 'color-mix(in srgb, var(--b) 20%, transparent)';
   const hasDeadState = dfa.deadStateId !== null;
-
-  const visibleStates      = showDeadState ? dfa.states.length : dfa.states.filter(s => !s.isDead).length;
+  const visibleStates = showDeadState
+    ? dfa.states.length
+    : dfa.states.filter((s) => !s.isDead).length;
   const visibleTransitions = showDeadState
     ? dfa.transitions.length
-    : dfa.transitions.filter(t => t.from !== dfa.deadStateId && t.to !== dfa.deadStateId).length;
+    : dfa.transitions.filter(
+        (t) => t.from !== dfa.deadStateId && t.to !== dfa.deadStateId
+      ).length;
 
   return (
-    <div
-      style={{
-        border: `1px solid ${borderColor}`,
-        borderRadius: 'var(--r-md)',
-        overflow: 'hidden',
-        background: 'var(--s1)',
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          borderBottom: '1px solid var(--border)',
-          padding: '10px 14px',
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 8,
-          background: 'var(--s2)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span
-            style={{
-              fontSize: 10,
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 600,
-              color: accentColor,
-              padding: '2px 6px',
-              borderRadius: 4,
-              background: `${accentColor}18`,
-              border: `1px solid ${accentColor}30`,
-              letterSpacing: '0.04em',
-            }}
-          >
+    <div className="rounded-md border border-border bg-card overflow-hidden">
+      {/* Panel Header */}
+      <div className="border-b border-border bg-muted/30 px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="font-mono text-xs px-2 py-0.5 font-medium">
             {label}
-          </span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--t1)', fontWeight: 500 }}>
+          </Badge>
+          <span className="font-mono text-[13px] font-medium text-foreground">
             {regexStr}
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', gap: 12, fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--t3)' }}>
-            <span>states <span style={{ color: 'var(--t1)' }}>{visibleStates}</span></span>
-            <span>transitions <span style={{ color: 'var(--t1)' }}>{visibleTransitions}</span></span>
-            <span>start <span style={{ color: 'var(--a)' }}>{dfa.startState}</span></span>
-            <span>accept <span style={{ color: 'var(--b)' }}>{dfa.acceptStates.length > 0 ? dfa.acceptStates.join(', ') : 'none'}</span></span>
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-3 ui-meta font-mono flex-wrap">
+            <span>states <span className="text-foreground font-medium">{visibleStates}</span></span>
+            <span className="text-border">·</span>
+            <span>transitions <span className="text-foreground font-medium">{visibleTransitions}</span></span>
+            <span className="text-border">·</span>
+            <span>start <span className="text-foreground font-medium">{dfa.startState}</span></span>
+            <span className="text-border">·</span>
+            <span>
+              accept{' '}
+              <span className="text-foreground font-medium">
+                {dfa.acceptStates.length > 0 ? dfa.acceptStates.join(', ') : 'none'}
+              </span>
+            </span>
           </div>
 
           {hasDeadState && (
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                fontSize: 11,
-                fontFamily: 'var(--font-mono)',
-                color: 'var(--t2)',
-                cursor: 'pointer',
-                padding: '3px 8px',
-                borderRadius: 4,
-                border: '1px solid var(--border)',
-                background: 'var(--s1)',
-                userSelect: 'none',
-                transition: 'border-color 120ms',
-              }}
-            >
-              <input
-                type="checkbox"
+            <div className="flex items-center gap-2 pl-3 border-l border-border">
+              <Switch
+                id={`dead-state-toggle-${label.toLowerCase()}`}
                 checked={showDeadState}
-                onChange={e => setShowDeadState(e.target.checked)}
-                style={{ width: 12, height: 12, accentColor: 'var(--a)', cursor: 'pointer' }}
+                onCheckedChange={setShowDeadState}
               />
-              Dead state
-            </label>
+              <Label
+                htmlFor={`dead-state-toggle-${label.toLowerCase()}`}
+                className="text-xs text-muted-foreground font-normal cursor-pointer select-none"
+              >
+                Dead state
+              </Label>
+            </div>
           )}
         </div>
       </div>
 
-      {/* Graph */}
-      <div style={{ padding: 12, background: 'var(--bg)' }}>
+      {/* Graph Area */}
+      <div className="p-3 bg-background">
         <AutomatonGraph dfa={dfa} hideDeadState={!showDeadState} />
       </div>
 
-      {/* Collapsible sections */}
-      <div style={{ borderTop: '1px solid var(--border)' }}>
-        <StateMappingTable states={dfa.states} expanded={expanded === 'map'} onToggle={() => setExpanded(expanded === 'map' ? null : 'map')} />
-        <DFATransitionTable dfa={dfa} hideDeadState={!showDeadState} expanded={expanded === 'table'} onToggle={() => setExpanded(expanded === 'table' ? null : 'table')} />
-        <SubsetSteps steps={steps} expanded={expanded === 'steps'} onToggle={() => setExpanded(expanded === 'steps' ? null : 'steps')} />
+      {/* Collapsible Sections */}
+      <div>
+        <StateMappingTable
+          states={dfa.states}
+          expanded={expanded === 'map'}
+          onToggle={() => setExpanded(expanded === 'map' ? null : 'map')}
+        />
+        <DFATransitionTable
+          dfa={dfa}
+          hideDeadState={!showDeadState}
+          expanded={expanded === 'table'}
+          onToggle={() => setExpanded(expanded === 'table' ? null : 'table')}
+        />
+        <SubsetSteps
+          steps={steps}
+          expanded={expanded === 'steps'}
+          onToggle={() => setExpanded(expanded === 'steps' ? null : 'steps')}
+        />
       </div>
     </div>
   );

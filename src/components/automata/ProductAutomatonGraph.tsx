@@ -2,6 +2,7 @@ import React, { useCallback, useMemo } from 'react';
 import ReactFlow, {
   Background,
   Controls,
+  EdgeLabelRenderer,
   type Node,
   type Edge,
   type NodeTypes,
@@ -15,32 +16,50 @@ import 'reactflow/dist/style.css';
 import type { ProductAutomaton } from '../../automata/equivalence/types';
 import { productToGraph } from '../../utils/productToGraph';
 
-// ─── Self-loop edge ───────────────────────────────────────────────────────────
+// ─── Self-loop edge with smooth arc and EdgeLabelRenderer ────────────────────
 const ProductSelfLoopEdge: React.FC<{
   id: string;
   sourceX: number;
   sourceY: number;
   label?: string;
+  data?: { label?: string };
   style?: React.CSSProperties;
   markerEnd?: string;
-}> = ({ id, sourceX, sourceY, label, style, markerEnd }) => {
-  const d = `M ${sourceX} ${sourceY - 20} C ${sourceX - 40} ${sourceY - 65}, ${sourceX + 40} ${sourceY - 65}, ${sourceX} ${sourceY - 20}`;
-  const midX = sourceX;
-  const midY = sourceY - 55;
-  const stroke = (style as React.CSSProperties & { stroke?: string })?.stroke ?? 'var(--border-2)';
+}> = ({ id, sourceX, sourceY, label, data, style, markerEnd }) => {
+  const displayLabel = data?.label ?? label;
+  const cx = sourceX - 34;
+  const cy = sourceY;
+
+  const x1 = cx + 12;
+  const y1 = cy - 16;
+  const cp1x = cx + 28;
+  const cp1y = cy - 46;
+  const cp2x = cx - 28;
+  const cp2y = cy - 46;
+  const x2 = cx - 12;
+  const y2 = cy - 16;
+
+  const d = `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}`;
+  const labelX = cx;
+  const labelY = cy - 44;
+  const stroke = (style as React.CSSProperties & { stroke?: string })?.stroke ?? '#a1a1aa';
+
   return (
     <>
       <path id={id} d={d} fill="none" style={{ stroke, strokeWidth: 1.5, ...style }} markerEnd={markerEnd} />
-      {label && (
-        <foreignObject x={midX - 20} y={midY - 10} width={40} height={20}>
-          <div style={{
-            fontSize: 10, fontFamily: 'var(--font-mono)', fontWeight: 600,
-            color: stroke, background: 'var(--bg)', padding: '0 3px',
-            textAlign: 'center', borderRadius: 2,
-          }}>
-            {label as string}
+      {displayLabel && (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: 'absolute',
+              transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+              pointerEvents: 'all',
+            }}
+            className="nodrag nopan px-1.5 py-0.5 rounded border border-border bg-background text-xs font-mono font-medium text-foreground shadow-2xs leading-none whitespace-nowrap select-none z-10"
+          >
+            {displayLabel}
           </div>
-        </foreignObject>
+        </EdgeLabelRenderer>
       )}
     </>
   );
@@ -57,44 +76,69 @@ interface ProductNodeData {
 }
 
 const ProductNode: React.FC<{ data: ProductNodeData }> = ({ data }) => {
-  const { isDistinguishing: isDist, isOnCounterexamplePath: onPath, isStart } = data;
+  const { isDistinguishing: isDist, isOnCounterexamplePath: onPath, isStart, label, acceptingA, acceptingB } = data;
 
-  const borderColor = isDist ? 'var(--err)' : onPath ? 'var(--warn)' : isStart ? 'var(--a)' : 'var(--border-2)';
-  const bg         = isDist ? 'color-mix(in srgb, var(--err) 12%, var(--s1))' : onPath ? 'color-mix(in srgb, var(--warn) 8%, var(--s1))' : 'var(--s2)';
-  const textColor  = isDist ? 'var(--err)' : onPath ? 'var(--warn)' : 'var(--t2)';
+  const bg = isDist
+    ? '#fef2f2'
+    : onPath
+    ? '#fffbeb'
+    : '#ffffff';
+
+  const borderColor = isDist
+    ? '#dc2626'
+    : onPath
+    ? '#d97706'
+    : isStart
+    ? '#18181b'
+    : '#a1a1aa';
+
+  const textColor = isDist
+    ? '#991b1b'
+    : onPath
+    ? '#92400e'
+    : '#09090b';
 
   return (
     <div
-      title={`${data.label} [A=${data.acceptingA ? 'Accept' : 'Reject'}, B=${data.acceptingB ? 'Accept' : 'Reject'}]${isDist ? ' [DISTINGUISHING]' : ''}`}
+      title={`${label} [A=${acceptingA ? 'Accept' : 'Reject'}, B=${acceptingB ? 'Accept' : 'Reject'}]${isDist ? ' (Distinguishing)' : ''}`}
       style={{
-        minWidth: 72,
-        height: 36,
-        borderRadius: 18,
-        padding: '0 10px',
+        minWidth: 68,
+        height: 32,
+        borderRadius: 6,
+        padding: '0 8px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: 11,
+        fontSize: 12,
         fontFamily: 'var(--font-mono)',
-        fontWeight: 600,
+        fontWeight: 500,
         background: bg,
         color: textColor,
-        border: `${isDist ? '2px solid' : '1.5px solid'} ${borderColor}`,
-        boxShadow: isDist ? `0 0 14px ${borderColor}30` : onPath ? `0 0 10px ${borderColor}25` : 'none',
+        border: `${isDist || isStart ? '2px' : '1.5px'} solid ${borderColor}`,
+        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.04)',
         position: 'relative',
-        transition: 'box-shadow 200ms',
       }}
     >
       <Handle type="target" position={Position.Left} style={{ opacity: 0 }} />
       <Handle type="source" position={Position.Right} style={{ opacity: 0 }} />
       {isStart && (
-        <span style={{
-          position: 'absolute', left: -22, top: '50%',
-          transform: 'translateY(-50%)',
-          color: 'var(--a)', fontSize: 15, lineHeight: 1,
-        }}>→</span>
+        <span
+          style={{
+            position: 'absolute',
+            left: -18,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: '#18181b',
+            fontSize: 15,
+            fontWeight: 600,
+            lineHeight: 1,
+          }}
+          aria-hidden="true"
+        >
+          →
+        </span>
       )}
-      <span>{data.label}</span>
+      <span>{label}</span>
     </div>
   );
 };
@@ -102,8 +146,7 @@ const ProductNode: React.FC<{ data: ProductNodeData }> = ({ data }) => {
 const NODE_TYPES: NodeTypes = { productState: ProductNode };
 const EDGE_TYPES: EdgeTypes = { selfconnecting: ProductSelfLoopEdge as never };
 
-// ─── Main component ───────────────────────────────────────────────────────────
-interface ProductAutomatonGraphProps {
+export interface ProductAutomatonGraphProps {
   productAutomaton: ProductAutomaton;
   counterexampleNodeIds?: string[];
   counterexampleEdgeIds?: string[];
@@ -136,28 +179,35 @@ export const ProductAutomatonGraph: React.FC<ProductAutomatonGraphProps> = ({
 
   const edges: Edge[] = gEdges.map((e) => {
     const onPath = e.isOnCounterexamplePath;
-    const strokeColor = onPath ? 'var(--warn)' : 'var(--border-2)';
+    const strokeColor = onPath ? '#b45309' : '#a1a1aa';
+    const markerColor = onPath ? '#b45309' : '#71717a';
+
     return {
       id: e.id,
       source: e.source,
       target: e.target,
-      label: e.label,
+      label: e.isSelfLoop ? undefined : e.label,
+      data: { label: e.label },
       animated: onPath,
       type: e.isSelfLoop ? 'selfconnecting' : 'default',
       markerEnd: {
         type: MarkerType.ArrowClosed,
-        color: strokeColor,
-        width: onPath ? 16 : 14,
-        height: onPath ? 16 : 14,
+        color: markerColor,
+        width: 14,
+        height: 14,
       },
       style: { stroke: strokeColor, strokeWidth: onPath ? 2 : 1.5 },
       labelStyle: {
-        fill: onPath ? 'var(--warn)' : 'var(--t2)',
-        fontSize: 11,
+        fill: onPath ? '#92400e' : '#09090b',
+        fontSize: 12,
         fontFamily: 'var(--font-mono)',
-        fontWeight: 600,
+        fontWeight: 500,
       },
-      labelBgStyle: { fill: 'var(--bg)', fillOpacity: 0.9 },
+      labelBgStyle: {
+        fill: '#ffffff',
+        stroke: onPath ? '#fde68a' : '#e4e4e7',
+        strokeWidth: 1,
+      },
       labelBgPadding: [4, 6] as [number, number],
       labelBgBorderRadius: 4,
     };
@@ -168,30 +218,21 @@ export const ProductAutomatonGraph: React.FC<ProductAutomatonGraphProps> = ({
   }, []);
 
   return (
-    <div
-      style={{
-        width: '100%',
-        height: 380,
-        borderRadius: 'var(--r-sm)',
-        border: '1px solid var(--border)',
-        overflow: 'hidden',
-        background: 'var(--s1)',
-      }}
-    >
+    <div className="w-full h-[400px] rounded-md border border-border overflow-hidden bg-muted/20">
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={NODE_TYPES}
         edgeTypes={EDGE_TYPES}
         fitView
-        fitViewOptions={{ padding: 0.3 }}
+        fitViewOptions={{ padding: 0.16 }}
         onInit={onInit}
         minZoom={0.2}
         maxZoom={3}
         attributionPosition="bottom-right"
         proOptions={{ hideAttribution: true }}
       >
-        <Background color="var(--border)" gap={28} variant={BackgroundVariant.Dots} size={1} />
+        <Background color="#e4e4e7" gap={24} variant={BackgroundVariant.Dots} size={1} />
         <Controls showInteractive={false} />
       </ReactFlow>
     </div>

@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
 import type { DFA } from '../../automata/dfa/types';
 import { AccordionSection } from './AccordionSection';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '../ui/table';
 
 interface DFATransitionTableProps {
   dfa: DFA;
@@ -17,9 +25,9 @@ export const DFATransitionTable: React.FC<DFATransitionTableProps> = ({
 }) => {
   const [localOpen, setLocalOpen] = useState(false);
   const expanded = extExpanded !== undefined ? extExpanded : localOpen;
-  const onToggle = extToggle ?? (() => setLocalOpen(o => !o));
+  const onToggle = extToggle ?? (() => setLocalOpen((o) => !o));
 
-  const visibleStates = dfa.states.filter(s => !hideDeadState || !s.isDead);
+  const visibleStates = dfa.states.filter((s) => !hideDeadState || !s.isDead);
 
   const transitionMap = new Map<string, string>();
   for (const t of dfa.transitions) {
@@ -34,48 +42,56 @@ export const DFATransitionTable: React.FC<DFATransitionTableProps> = ({
       onToggle={onToggle}
       overflow
     >
-      <table style={{ width: '100%', fontFamily: 'var(--font-mono)', fontSize: 11, borderCollapse: 'collapse' }}>
-        <thead>
-          <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--s1)', position: 'sticky', top: 0 }}>
-            <th style={{ textAlign: 'left', padding: '6px 14px', fontWeight: 600, color: 'var(--t3)', fontSize: 10, letterSpacing: '0.04em' }}>STATE</th>
-            {dfa.alphabet.map(sym => (
-              <th key={sym} style={{ textAlign: 'left', padding: '6px 14px', fontWeight: 600, color: 'var(--warn)', fontSize: 10, letterSpacing: '0.04em' }}>
-                {sym}
-              </th>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>State</TableHead>
+            {dfa.alphabet.map((sym) => (
+              <TableHead key={sym}>{sym}</TableHead>
             ))}
-            <th style={{ textAlign: 'left', padding: '6px 14px', fontWeight: 600, color: 'var(--t3)', fontSize: 10, letterSpacing: '0.04em' }}>ACCEPT</th>
-          </tr>
-        </thead>
-        <tbody>
-          {visibleStates.map((s, i) => {
-            const isStart  = s.id === dfa.startState;
+            <TableHead className="text-right">Accepting</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {visibleStates.map((s) => {
+            const isStart = s.id === dfa.startState;
             const isAccept = s.isAccepting;
-            const rowBg    = i % 2 === 0 ? 'var(--bg)' : 'var(--s1)';
+
             return (
-              <tr key={s.id} style={{ borderBottom: '1px solid var(--border)', background: rowBg }}>
-                <td style={{ padding: '5px 14px' }}>
-                  {isStart && <span style={{ color: 'var(--a)', marginRight: 4 }}>→</span>}
-                  {isAccept && <span style={{ color: 'var(--b)', marginRight: 4 }}>*</span>}
-                  <span style={{ color: isAccept ? 'var(--b)' : isStart ? 'var(--a)' : s.isDead ? 'var(--t3)' : 'var(--t1)', fontWeight: 600 }}>
-                    {s.id}
+              <TableRow key={s.id}>
+                <TableCell className="font-mono font-medium">
+                  <span className="inline-flex items-center gap-1.5">
+                    {isStart && <span className="text-muted-foreground text-xs" title="Start state">→</span>}
+                    {isAccept && <span className="text-foreground text-xs" title="Accept state">*</span>}
+                    <span className={s.isDead ? 'text-muted-foreground' : 'text-foreground'}>
+                      {s.id}
+                    </span>
                   </span>
-                </td>
-                {dfa.alphabet.map(sym => {
+                </TableCell>
+                {dfa.alphabet.map((sym) => {
                   const target = transitionMap.get(`${s.id},${sym}`) ?? '—';
+                  const isDeadTarget = target === 'DEAD';
                   return (
-                    <td key={sym} style={{ padding: '5px 14px', color: target === 'DEAD' || target === '—' ? 'var(--t3)' : 'var(--t1)' }}>
+                    <TableCell
+                      key={sym}
+                      className={`font-mono ${isDeadTarget || target === '—' ? 'text-muted-foreground/60' : 'text-foreground'}`}
+                    >
                       {target}
-                    </td>
+                    </TableCell>
                   );
                 })}
-                <td style={{ padding: '5px 14px', color: isAccept ? 'var(--ok)' : 'var(--t3)', fontWeight: isAccept ? 600 : 400 }}>
-                  {isAccept ? 'Yes' : 'No'}
-                </td>
-              </tr>
+                <TableCell className="text-right font-sans">
+                  {isAccept ? (
+                    <span className="text-emerald-700 dark:text-emerald-400 font-medium">Yes</span>
+                  ) : (
+                    <span className="text-muted-foreground/60 font-normal">No</span>
+                  )}
+                </TableCell>
+              </TableRow>
             );
           })}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </AccordionSection>
   );
 };

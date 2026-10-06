@@ -1,14 +1,8 @@
-/**
- * AutomatonGraph — renders an NFA or DFA as a directed state-transition graph
- * using React Flow.
- *
- * Receives pure NFA/DFA data; knows nothing about how the automaton was built.
- * All algorithm code lives in automata/.
- */
 import React, { useCallback, useMemo } from 'react';
 import ReactFlow, {
   Background,
   Controls,
+  EdgeLabelRenderer,
   type Node,
   type Edge,
   type NodeTypes,
@@ -17,7 +11,6 @@ import ReactFlow, {
   Position,
   MarkerType,
   BackgroundVariant,
-  getStraightPath,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import type { NFA } from '../../automata/nfa/types';
@@ -25,18 +18,35 @@ import type { DFA } from '../../automata/dfa/types';
 import { nfaToGraph } from '../../utils/nfaToGraph';
 import { dfaToGraph } from '../../utils/dfaToGraph';
 
-// ─── Self-loop edge (fixes "selfconnecting not found" warning) ────────────────
+// ─── Self-loop edge with smooth circular arc & unclipped label ────────────────
 const SelfLoopEdge: React.FC<{
   id: string;
   sourceX: number;
   sourceY: number;
   label?: string;
+  data?: { label?: string };
   style?: React.CSSProperties;
   markerEnd?: string;
-}> = ({ id, sourceX, sourceY, label, style, markerEnd }) => {
-  const d = `M ${sourceX} ${sourceY - 24} C ${sourceX - 40} ${sourceY - 70}, ${sourceX + 40} ${sourceY - 70}, ${sourceX} ${sourceY - 24}`;
-  const midX = sourceX;
-  const midY = sourceY - 60;
+}> = ({ id, sourceX, sourceY, label, data, style, markerEnd }) => {
+  const displayLabel = data?.label ?? label;
+  // Node circle diameter is 44px, radius is 22px
+  // Right handle is at (sourceX, sourceY) -> center is (sourceX - 22, sourceY)
+  const cx = sourceX - 22;
+  const cy = sourceY;
+
+  // Emerge from top-right of node perimeter, loop up smoothly, and enter top-left pointing into center
+  const x1 = cx + 11;
+  const y1 = cy - 19;
+  const cp1x = cx + 28;
+  const cp1y = cy - 48;
+  const cp2x = cx - 28;
+  const cp2y = cy - 48;
+  const x2 = cx - 11;
+  const y2 = cy - 19;
+
+  const d = `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}`;
+  const labelX = cx;
+  const labelY = cy - 46;
 
   return (
     <>
@@ -44,33 +54,28 @@ const SelfLoopEdge: React.FC<{
         id={id}
         d={d}
         fill="none"
-        style={{ stroke: 'var(--border-2)', strokeWidth: 1.5, ...style }}
+        style={{ stroke: '#a1a1aa', strokeWidth: 1.5, ...style }}
         markerEnd={markerEnd}
       />
-      {label && (
-        <foreignObject x={midX - 20} y={midY - 10} width={40} height={20}>
+      {displayLabel && (
+        <EdgeLabelRenderer>
           <div
             style={{
-              fontSize: 10,
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 600,
-              color: 'var(--t2)',
-              background: 'var(--bg)',
-              padding: '0 3px',
-              textAlign: 'center',
-              borderRadius: 2,
+              position: 'absolute',
+              transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+              pointerEvents: 'all',
             }}
+            className="nodrag nopan px-1.5 py-0.5 rounded border border-border bg-background text-xs font-mono font-medium text-foreground shadow-2xs leading-none whitespace-nowrap select-none z-10"
           >
-            {label as string}
+            {displayLabel}
           </div>
-        </foreignObject>
+        </EdgeLabelRenderer>
       )}
     </>
   );
 };
-void getStraightPath; // imported to keep module resolution intact
 
-// ─── Custom node: state circle ────────────────────────────────────────────────
+// ─── Custom node: automata state circle ───────────────────────────────────────
 interface StateNodeData {
   label: string;
   isStart: boolean;
@@ -80,22 +85,29 @@ interface StateNodeData {
 }
 
 const StateNode: React.FC<{ data: StateNodeData }> = ({ data }) => {
-  const size = 48;
-  const borderColor = data.isDead
-    ? 'var(--border)'
-    : data.isAccept
-    ? 'var(--b)'
-    : data.isStart
-    ? 'var(--a)'
-    : 'var(--border-2)';
+  const size = 44;
+  const { isDead, isAccept, isStart, label, subsetLabel } = data;
 
-  const bg = data.isDead ? 'var(--s1)' : data.isAccept ? 'var(--b-muted)' : 'var(--s2)';
-  const textColor = data.isDead ? 'var(--t3)' : data.isAccept ? 'var(--b)' : data.isStart ? 'var(--a)' : 'var(--t2)';
-  const fontSize = data.label.length > 3 ? 10 : 12;
+  const bg = isDead ? '#f4f4f5' : '#ffffff';
+  const textColor = isDead ? '#71717a' : '#09090b';
+  const border = isDead
+    ? '1.5px dashed #a1a1aa'
+    : isAccept
+    ? '2px solid #18181b'
+    : isStart
+    ? '2px solid #18181b'
+    : '1.5px solid #a1a1aa';
+
+  // Double ring for accepting state (automata standard: concentric ring)
+  const boxShadow = isAccept
+    ? '0 0 0 2.5px #ffffff, 0 0 0 4px #18181b'
+    : '0 1px 2px 0 rgba(0, 0, 0, 0.04)';
+
+  const fontSize = label.length > 3 ? 11 : 13;
 
   return (
     <div
-      title={data.subsetLabel ? `${data.label} = ${data.subsetLabel}` : data.label}
+      title={subsetLabel ? `${label} = ${subsetLabel}` : label}
       style={{
         width: size,
         height: size,
@@ -106,41 +118,34 @@ const StateNode: React.FC<{ data: StateNodeData }> = ({ data }) => {
         justifyContent: 'center',
         fontSize,
         fontFamily: 'var(--font-mono)',
-        fontWeight: 600,
+        fontWeight: 500,
         background: bg,
         color: textColor,
-        border: data.isDead
-          ? `1.5px dashed ${borderColor}`
-          : data.isAccept
-          ? `2.5px double ${borderColor}`
-          : `1.5px solid ${borderColor}`,
-        boxShadow: data.isAccept
-          ? `0 0 0 1px ${borderColor}40, 0 0 12px ${borderColor}20`
-          : data.isStart
-          ? `0 0 0 1px ${borderColor}40`
-          : 'none',
+        border,
+        boxShadow,
         position: 'relative',
       }}
     >
       <Handle type="target" position={Position.Left} style={{ opacity: 0 }} />
       <Handle type="source" position={Position.Right} style={{ opacity: 0 }} />
-      {data.isStart && (
+      {isStart && (
         <span
           style={{
             position: 'absolute',
-            left: -22,
+            left: -18,
             top: '50%',
             transform: 'translateY(-50%)',
-            color: 'var(--a)',
+            color: '#18181b',
             fontSize: 15,
+            fontWeight: 600,
             lineHeight: 1,
-            fontWeight: 400,
           }}
+          aria-hidden="true"
         >
           →
         </span>
       )}
-      <span>{data.label}</span>
+      <span>{label}</span>
     </div>
   );
 };
@@ -148,17 +153,20 @@ const StateNode: React.FC<{ data: StateNodeData }> = ({ data }) => {
 const NODE_TYPES: NodeTypes = { state: StateNode };
 const EDGE_TYPES: EdgeTypes = { selfconnecting: SelfLoopEdge as never };
 
-// ─── Main component ───────────────────────────────────────────────────────────
 export interface AutomatonGraphProps {
   nfa?: NFA;
   dfa?: DFA;
   hideDeadState?: boolean;
 }
 
-export const AutomatonGraph: React.FC<AutomatonGraphProps> = ({ nfa, dfa, hideDeadState = false }) => {
+export const AutomatonGraph: React.FC<AutomatonGraphProps> = ({
+  nfa,
+  dfa,
+  hideDeadState = false,
+}) => {
   const { nodes: gNodes, edges: gEdges } = useMemo(() => {
-    if (dfa)  return dfaToGraph(dfa, { hideDeadState });
-    if (nfa)  return nfaToGraph(nfa);
+    if (dfa) return dfaToGraph(dfa, { hideDeadState });
+    if (nfa) return nfaToGraph(nfa);
     return { nodes: [], edges: [] };
   }, [nfa, dfa, hideDeadState]);
 
@@ -180,13 +188,24 @@ export const AutomatonGraph: React.FC<AutomatonGraphProps> = ({ nfa, dfa, hideDe
     id: e.id,
     source: e.source,
     target: e.target,
-    label: e.label,
+    label: e.isSelfLoop ? undefined : e.label,
+    data: { label: e.label },
     animated: false,
     type: e.isSelfLoop ? 'selfconnecting' : 'default',
-    markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--border-2)', width: 14, height: 14 },
-    style: { stroke: 'var(--border-2)', strokeWidth: 1.5 },
-    labelStyle: { fill: 'var(--t2)', fontSize: 11, fontFamily: 'var(--font-mono)', fontWeight: 600 },
-    labelBgStyle: { fill: 'var(--bg)', fillOpacity: 0.9 },
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      color: '#71717a',
+      width: 14,
+      height: 14,
+    },
+    style: { stroke: '#a1a1aa', strokeWidth: 1.5 },
+    labelStyle: {
+      fill: '#09090b',
+      fontSize: 12,
+      fontFamily: 'var(--font-mono)',
+      fontWeight: 500,
+    },
+    labelBgStyle: { fill: '#ffffff', stroke: '#e4e4e7', strokeWidth: 1 },
     labelBgPadding: [4, 6] as [number, number],
     labelBgBorderRadius: 4,
   }));
@@ -196,35 +215,21 @@ export const AutomatonGraph: React.FC<AutomatonGraphProps> = ({ nfa, dfa, hideDe
   }, []);
 
   return (
-    <div
-      style={{
-        width: '100%',
-        height: 320,
-        borderRadius: 'var(--r-sm)',
-        border: '1px solid var(--border)',
-        overflow: 'hidden',
-        background: 'var(--s1)',
-      }}
-    >
+    <div className="w-full h-[400px] rounded-md border border-border overflow-hidden bg-muted/20">
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={NODE_TYPES}
         edgeTypes={EDGE_TYPES}
         fitView
-        fitViewOptions={{ padding: 0.35 }}
+        fitViewOptions={{ padding: 0.16 }}
         onInit={onInit}
-        minZoom={0.25}
+        minZoom={0.2}
         maxZoom={3}
         attributionPosition="bottom-right"
         proOptions={{ hideAttribution: true }}
       >
-        <Background
-          color="var(--border)"
-          gap={28}
-          variant={BackgroundVariant.Dots}
-          size={1}
-        />
+        <Background color="#e4e4e7" gap={24} variant={BackgroundVariant.Dots} size={1} />
         <Controls showInteractive={false} />
       </ReactFlow>
     </div>

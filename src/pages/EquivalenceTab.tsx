@@ -4,10 +4,17 @@ import { buildNFA } from '../automata/nfa/thompson';
 import { buildDFA } from '../automata/dfa/subset';
 import { minimizeDFA } from '../automata/minimization/minimize';
 import { checkEquivalence } from '../automata/equivalence/equivalence';
-import { CounterexampleInspector } from '../components/automata/CounterexampleInspector';
-import { ProductGraphPanel } from '../components/automata/ProductGraphPanel';
-import { EquivalenceSteps } from '../components/automata/EquivalenceSteps';
-import { CheckCircle2, XCircle, ArrowRight, AlertCircle } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '../components/ui/table';
+import { Check, X, ArrowRight } from 'lucide-react';
 
 interface EquivalenceTabProps {
   resultA: ProcessedRegexResult | null;
@@ -59,124 +66,28 @@ export const EquivalenceTab: React.FC<EquivalenceTabProps> = ({
 
   if (!hasCompared) {
     return (
-      <div
-        style={{
-          padding: '64px 24px',
-          textAlign: 'center',
-          background: 'var(--s0)',
-          border: '1px dashed var(--border-2)',
-          borderRadius: 'var(--r-lg)',
-          marginTop: 20,
-        }}
-      >
-        <div
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: '50%',
-            background: 'var(--s1)',
-            border: '1px solid var(--border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 16px',
-            color: 'var(--t3)',
-          }}
-        >
-          <AlertCircle size={20} />
-        </div>
-        <p style={{ color: 'var(--t2)', fontSize: 13, marginBottom: 12 }}>
+      <div className="py-16 px-6 text-center border border-dashed border-border rounded-lg max-w-xl mx-auto space-y-3">
+        <p className="ui-body text-muted-foreground">
           Regular expressions have been modified or not yet compared.
         </p>
-        <button
-          onClick={onGoToInput}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            fontSize: 12,
-            fontFamily: 'var(--font-sans)',
-            padding: '6px 14px',
-            borderRadius: 'var(--r-sm)',
-            background: 'var(--s1)',
-            border: '1px solid var(--border-2)',
-            color: 'var(--t1)',
-            cursor: 'pointer',
-            transition: 'background 0.15s, border-color 0.15s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--s2)';
-            e.currentTarget.style.borderColor = 'var(--border-hover)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'var(--s1)';
-            e.currentTarget.style.borderColor = 'var(--border-2)';
-          }}
-        >
-          Return to Input &amp; Compare <ArrowRight size={13} />
-        </button>
+        <Button variant="outline" size="default" onClick={onGoToInput} className="gap-1.5 text-[13px] font-medium h-8.5">
+          <span>Return to Input and compare</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Button>
       </div>
     );
   }
 
   if (!minDfaA || !minDfaB || !eqResult) {
     return (
-      <div
-        style={{
-          padding: '64px 24px',
-          textAlign: 'center',
-          background: 'var(--s0)',
-          border: '1px dashed var(--border-2)',
-          borderRadius: 'var(--r-lg)',
-          marginTop: 20,
-        }}
-      >
-        <div
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: '50%',
-            background: 'var(--s1)',
-            border: '1px solid var(--border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 16px',
-            color: 'var(--t3)',
-          }}
-        >
-          <AlertCircle size={20} />
-        </div>
-        <p style={{ color: 'var(--t2)', fontSize: 13, marginBottom: 12 }}>
+      <div className="py-16 px-6 text-center border border-dashed border-border rounded-lg max-w-xl mx-auto space-y-3">
+        <p className="ui-body text-muted-foreground">
           Enter valid regular expressions in the Input tab to verify language equivalence.
         </p>
-        <button
-          onClick={onGoToInput}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            fontSize: 12,
-            fontFamily: 'var(--font-sans)',
-            padding: '6px 14px',
-            borderRadius: 'var(--r-sm)',
-            background: 'var(--s1)',
-            border: '1px solid var(--border-2)',
-            color: 'var(--t1)',
-            cursor: 'pointer',
-            transition: 'background 0.15s, border-color 0.15s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--s2)';
-            e.currentTarget.style.borderColor = 'var(--border-hover)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'var(--s1)';
-            e.currentTarget.style.borderColor = 'var(--border-2)';
-          }}
-        >
-          Go to Input tab <ArrowRight size={13} />
-        </button>
+        <Button variant="outline" size="default" onClick={onGoToInput} className="gap-1.5 text-[13px] font-medium h-8.5">
+          <span>Go to Input tab</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Button>
       </div>
     );
   }
@@ -184,303 +95,142 @@ export const EquivalenceTab: React.FC<EquivalenceTabProps> = ({
   const isEq = eqResult.equivalent;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div className="space-y-6">
       {/* Section Header */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-          paddingBottom: 14,
-          borderBottom: '1px solid var(--border)',
-        }}
-      >
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <h2
-              style={{
-                fontSize: 14,
-                fontWeight: 600,
-                color: 'var(--t1)',
-                letterSpacing: '-0.01em',
-                margin: 0,
-              }}
-            >
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2">
+            <h2 className="section-title">
               Language Equivalence &amp; Counterexample Analysis
             </h2>
-            <span
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                fontWeight: 600,
-                color: 'var(--a)',
-                background: 'color-mix(in srgb, var(--a) 12%, transparent)',
-                border: '1px solid color-mix(in srgb, var(--a) 25%, transparent)',
-                padding: '1px 6px',
-                borderRadius: 'var(--r-xs)',
-              }}
-            >
-              Stage 5
+            <span className="ui-meta font-mono">
+              (Stage 5)
             </span>
           </div>
-          <p style={{ fontSize: 12, color: 'var(--t3)', margin: '4px 0 0' }}>
-            Verified via Symmetric Difference Product Automaton (L(A) △ L(B)) and Breadth-First Search reachability.
+          <p className="ui-body-small">
+            Verified via Symmetric Difference Product Automaton (L(A) △ L(B)) and BFS reachability.
           </p>
         </div>
 
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            fontFamily: 'var(--font-mono)',
-            fontSize: 11,
-            color: 'var(--t3)',
-          }}
-        >
-          <span
-            style={{
-              padding: '2px 8px',
-              borderRadius: 'var(--r-xs)',
-              background: 'var(--s1)',
-              border: '1px solid var(--border)',
-            }}
-          >
-            Σ = {'{'}{eqResult.combinedAlphabet.join(', ')}{'}'}
-          </span>
-          <span
-            style={{
-              padding: '2px 8px',
-              borderRadius: 'var(--r-xs)',
-              background: 'var(--s1)',
-              border: '1px solid var(--border)',
-            }}
-          >
-            {eqResult.visitedProductStates} product states explored
-          </span>
+        <div className="flex items-center gap-3 ui-meta font-mono">
+          <span>Σ = {'{'}{eqResult.combinedAlphabet.join(', ')}{'}'}</span>
+          <span className="text-border">·</span>
+          <span>{eqResult.visitedProductStates} product states explored</span>
         </div>
       </div>
 
-      {/* Prominent Technical Result Banner */}
+      {/* Prominent Technical Verdict Banner */}
       <div
-        style={{
-          borderRadius: 'var(--r-md)',
-          padding: 18,
-          background: isEq
-            ? 'color-mix(in srgb, var(--g) 8%, var(--s0))'
-            : 'color-mix(in srgb, var(--r) 8%, var(--s0))',
-          border: `1px solid ${isEq ? 'color-mix(in srgb, var(--g) 30%, transparent)' : 'color-mix(in srgb, var(--r) 30%, transparent)'}`,
-          boxShadow: isEq
-            ? '0 0 20px -5px color-mix(in srgb, var(--g) 15%, transparent)'
-            : '0 0 20px -5px color-mix(in srgb, var(--r) 15%, transparent)',
-        }}
+        className={`rounded-md border p-4 space-y-3 ${
+          isEq
+            ? 'border-emerald-200 bg-emerald-50/40 dark:border-emerald-900/50 dark:bg-emerald-950/20'
+            : 'border-red-200 bg-red-50/40 dark:border-red-900/50 dark:bg-red-950/20'
+        }`}
       >
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 10,
-            marginBottom: 10,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                padding: '3px 8px',
-                borderRadius: 'var(--r-xs)',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 11,
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-                background: isEq
-                  ? 'color-mix(in srgb, var(--g) 18%, transparent)'
-                  : 'color-mix(in srgb, var(--r) 18%, transparent)',
-                color: isEq ? 'var(--g)' : 'var(--r)',
-                border: `1px solid ${isEq ? 'color-mix(in srgb, var(--g) 40%, transparent)' : 'color-mix(in srgb, var(--r) 40%, transparent)'}`,
-              }}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5">
+            <Badge
+              variant={isEq ? 'success' : 'destructive'}
+              className="text-xs font-medium h-6 px-2.5 gap-1.5"
             >
-              {isEq ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
-              {isEq ? 'Equivalent' : 'Not Equivalent'}
-            </span>
-            <span
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 14,
-                fontWeight: 600,
-                color: 'var(--t1)',
-              }}
-            >
+              {isEq ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
+              <span>{isEq ? 'Equivalent' : 'Not equivalent'}</span>
+            </Badge>
+
+            <span className="result-verdict">
               {isEq ? 'L(Regex A) = L(Regex B)' : 'L(Regex A) ≠ L(Regex B)'}
             </span>
           </div>
 
-          <div
-            style={{
-              fontSize: 11,
-              fontFamily: 'var(--font-mono)',
-              color: 'var(--t3)',
-            }}
-          >
+          <span className="ui-meta font-mono">
             Algorithm: Product Automaton + BFS
-          </div>
+          </span>
         </div>
 
         {isEq ? (
-          <p
-            style={{
-              fontSize: 12,
-              color: 'var(--t2)',
-              lineHeight: 1.6,
-              margin: 0,
-            }}
-          >
-            No distinguishing string exists. Both regular expressions accept the exact same formal language over the combined alphabet{' '}
-            <code style={{ fontFamily: 'var(--font-mono)', color: 'var(--g)' }}>
+          <p className="ui-body-small text-foreground/80">
+            No distinguishing string exists. Both expressions define the same formal language over the combined alphabet{' '}
+            <code className="code-text font-medium text-foreground">
               Σ = {'{'}{eqResult.combinedAlphabet.join(', ')}{'}'}
             </code>
-            . No symmetric-difference accepting state was reachable in the product automaton.
+            . No symmetric-difference state was reachable in the product automaton ({eqResult.visitedProductStates} product states explored).
           </p>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <p style={{ fontSize: 12, color: 'var(--t2)', lineHeight: 1.6, margin: 0 }}>
-              The languages differ. A shortest distinguishing string was discovered by Breadth-First Search on the symmetric difference product automaton:
+          <div className="space-y-3 pt-1">
+            <p className="ui-body-small text-foreground/80">
+              The languages differ. Breadth-First Search on the symmetric difference product automaton found a shortest distinguishing string:
             </p>
 
-            {/* Counterexample Callout */}
-            <div
-              style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                alignItems: 'center',
-                gap: 12,
-                padding: '8px 14px',
-                borderRadius: 'var(--r-sm)',
-                background: 'var(--bg)',
-                border: '1px solid color-mix(in srgb, var(--r) 25%, var(--border))',
-              }}
-            >
-              <span style={{ fontSize: 12, color: 'var(--t3)', fontFamily: 'var(--font-sans)' }}>
-                Shortest Distinguishing String:
-              </span>
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: 'var(--y)',
-                  background: 'color-mix(in srgb, var(--y) 12%, transparent)',
-                  border: '1px solid color-mix(in srgb, var(--y) 30%, transparent)',
-                  padding: '2px 8px',
-                  borderRadius: 'var(--r-xs)',
-                }}
-              >
-                "{eqResult.counterexample?.displayString}"
-              </span>
-              <span
-                style={{
-                  marginLeft: 'auto',
-                  fontSize: 11,
-                  fontFamily: 'var(--font-mono)',
-                  color: 'var(--t3)',
-                }}
-              >
+            {/* Shortest Distinguishing String Callout */}
+            <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-md bg-background border border-border">
+              <div className="flex items-center gap-3">
+                <span className="text-[13px] font-medium text-muted-foreground">Shortest distinguishing string:</span>
+                <span className="code-value-lg bg-muted/60 px-3 py-1 rounded border border-border text-foreground select-all tracking-normal">
+                  "{eqResult.counterexample?.displayString}"
+                </span>
+              </div>
+              <span className="ui-meta font-mono">
                 length: {eqResult.counterexample?.rawString.length ?? 0}
               </span>
             </div>
 
-            {/* Concrete Acceptance Comparison Table */}
-            <div
-              style={{
-                borderRadius: 'var(--r-sm)',
-                overflow: 'hidden',
-                border: '1px solid var(--border)',
-                fontSize: 12,
-                fontFamily: 'var(--font-mono)',
-              }}
-            >
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                <thead>
-                  <tr
-                    style={{
-                      background: 'var(--s1)',
-                      color: 'var(--t3)',
-                      borderBottom: '1px solid var(--border)',
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.04em',
-                    }}
-                  >
-                    <th style={{ padding: '7px 12px', fontWeight: 600 }}>Expression</th>
-                    <th style={{ padding: '7px 12px', fontWeight: 600 }}>Input String</th>
-                    <th style={{ padding: '7px 12px', fontWeight: 600 }}>Language Acceptance</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr style={{ background: 'var(--s0)', borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '7px 12px' }}>
-                      <span style={{ color: 'var(--a)', fontWeight: 600 }}>Regex A:</span>{' '}
-                      <span style={{ color: 'var(--t1)' }}>{regexA}</span>
-                    </td>
-                    <td style={{ padding: '7px 12px', color: 'var(--y)' }}>
+            {/* Acceptance Comparison Table */}
+            <div className="rounded-md border border-border bg-background overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-1/3">Expression</TableHead>
+                    <TableHead className="w-1/3">Input String</TableHead>
+                    <TableHead className="w-1/3 text-right">Acceptance Result</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell>
+                      <span className="text-muted-foreground mr-1.5 font-sans font-medium">Regex A:</span>
+                      <span className="code-text font-medium text-foreground">{regexA}</span>
+                    </TableCell>
+                    <TableCell className="font-mono text-muted-foreground">
                       "{eqResult.counterexample?.displayString}"
-                    </td>
-                    <td style={{ padding: '7px 12px' }}>
+                    </TableCell>
+                    <TableCell className="text-right font-sans">
                       {eqResult.counterexample?.acceptedByA ? (
-                        <span style={{ color: 'var(--g)', fontWeight: 700 }}>✓ ACCEPT</span>
+                        <Badge variant="outline" className="border-emerald-300 text-emerald-700 bg-emerald-50/50 font-medium text-xs">
+                          Accept
+                        </Badge>
                       ) : (
-                        <span style={{ color: 'var(--r)', fontWeight: 700 }}>✗ REJECT</span>
+                        <Badge variant="outline" className="border-red-300 text-red-700 bg-red-50/50 font-medium text-xs">
+                          Reject
+                        </Badge>
                       )}
-                    </td>
-                  </tr>
-                  <tr style={{ background: 'var(--s0)' }}>
-                    <td style={{ padding: '7px 12px' }}>
-                      <span style={{ color: 'var(--b)', fontWeight: 600 }}>Regex B:</span>{' '}
-                      <span style={{ color: 'var(--t1)' }}>{regexB}</span>
-                    </td>
-                    <td style={{ padding: '7px 12px', color: 'var(--y)' }}>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>
+                      <span className="text-muted-foreground mr-1.5 font-sans font-medium">Regex B:</span>
+                      <span className="code-text font-medium text-foreground">{regexB}</span>
+                    </TableCell>
+                    <TableCell className="font-mono text-muted-foreground">
                       "{eqResult.counterexample?.displayString}"
-                    </td>
-                    <td style={{ padding: '7px 12px' }}>
+                    </TableCell>
+                    <TableCell className="text-right font-sans">
                       {eqResult.counterexample?.acceptedByB ? (
-                        <span style={{ color: 'var(--g)', fontWeight: 700 }}>✓ ACCEPT</span>
+                        <Badge variant="outline" className="border-emerald-300 text-emerald-700 bg-emerald-50/50 font-medium text-xs">
+                          Accept
+                        </Badge>
                       ) : (
-                        <span style={{ color: 'var(--r)', fontWeight: 700 }}>✗ REJECT</span>
+                        <Badge variant="outline" className="border-red-300 text-red-700 bg-red-50/50 font-medium text-xs">
+                          Reject
+                        </Badge>
                       )}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
             </div>
           </div>
         )}
       </div>
-
-      {/* Counterexample Derivation Inspector (if not equivalent) */}
-      {!isEq && eqResult.counterexample && (
-        <CounterexampleInspector
-          counterexample={eqResult.counterexample}
-          regexA={regexA}
-          regexB={regexB}
-        />
-      )}
-
-      {/* Product Automaton Graph Panel */}
-      <ProductGraphPanel
-        productAutomaton={eqResult.productAutomaton}
-        counterexampleNodeIds={eqResult.counterexampleNodeIds}
-        counterexampleEdgeIds={eqResult.counterexampleEdgeIds}
-      />
-
-      {/* BFS Product Exploration Steps */}
-      <EquivalenceSteps steps={eqResult.steps} />
     </div>
   );
 };

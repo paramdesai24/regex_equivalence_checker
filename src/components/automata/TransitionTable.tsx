@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
 import type { NFA, Transition } from '../../automata/nfa/types';
 import { AccordionSection } from './AccordionSection';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '../ui/table';
 
 interface TransitionTableProps {
   nfa: NFA;
@@ -8,10 +16,14 @@ interface TransitionTableProps {
   onToggle?: () => void;
 }
 
-export const TransitionTable: React.FC<TransitionTableProps> = ({ nfa, expanded: extExpanded, onToggle: extToggle }) => {
+export const TransitionTable: React.FC<TransitionTableProps> = ({
+  nfa,
+  expanded: extExpanded,
+  onToggle: extToggle,
+}) => {
   const [localOpen, setLocalOpen] = useState(false);
   const expanded = extExpanded !== undefined ? extExpanded : localOpen;
-  const onToggle = extToggle ?? (() => setLocalOpen(o => !o));
+  const onToggle = extToggle ?? (() => setLocalOpen((o) => !o));
 
   const sorted = [...nfa.transitions].sort(
     (a, b) => a.from - b.from || (a.symbol ?? 'ε').localeCompare(b.symbol ?? 'ε')
@@ -20,35 +32,29 @@ export const TransitionTable: React.FC<TransitionTableProps> = ({ nfa, expanded:
   return (
     <AccordionSection
       title="Transition Table"
-      badge={`${nfa.transitions.length} rows`}
+      badge={`${nfa.transitions.length} transitions`}
       expanded={expanded}
       onToggle={onToggle}
       overflow
     >
-      <table style={{ width: '100%', fontFamily: 'var(--font-mono)', fontSize: 11, borderCollapse: 'collapse' }}>
-        <thead>
-          <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--s1)', position: 'sticky', top: 0 }}>
-            <th style={{ textAlign: 'left', padding: '6px 14px', fontWeight: 600, color: 'var(--t3)', letterSpacing: '0.04em', fontSize: 10 }}>FROM</th>
-            <th style={{ textAlign: 'left', padding: '6px 14px', fontWeight: 600, color: 'var(--t3)', letterSpacing: '0.04em', fontSize: 10 }}>SYM</th>
-            <th style={{ textAlign: 'left', padding: '6px 14px', fontWeight: 600, color: 'var(--t3)', letterSpacing: '0.04em', fontSize: 10 }}>TO</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-1/3">From state</TableHead>
+            <TableHead className="w-1/3">Symbol</TableHead>
+            <TableHead className="w-1/3">To state</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {sorted.map((t: Transition, i) => (
-            <tr
-              key={i}
-              style={{
-                borderBottom: '1px solid var(--border)',
-                background: i % 2 === 0 ? 'var(--bg)' : 'var(--s1)',
-              }}
-            >
-              <td style={{ padding: '5px 14px', color: 'var(--a)' }}>q{t.from}</td>
-              <td style={{ padding: '5px 14px', color: 'var(--warn)' }}>{t.symbol ?? 'ε'}</td>
-              <td style={{ padding: '5px 14px', color: 'var(--b)' }}>q{t.to}</td>
-            </tr>
+            <TableRow key={i}>
+              <TableCell className="font-mono font-medium text-foreground">q{t.from}</TableCell>
+              <TableCell className="font-mono text-muted-foreground">{t.symbol ?? 'ε'}</TableCell>
+              <TableCell className="font-mono font-medium text-foreground">q{t.to}</TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </AccordionSection>
   );
 };

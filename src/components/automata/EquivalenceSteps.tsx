@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { EquivalenceStep } from '../../automata/equivalence/types';
 import { AccordionSection } from './AccordionSection';
+import { Badge } from '../ui/badge';
 
 interface EquivalenceStepsProps {
   steps: EquivalenceStep[];
@@ -12,56 +13,44 @@ export const EquivalenceSteps: React.FC<EquivalenceStepsProps> = ({ steps }) => 
   return (
     <AccordionSection
       title="BFS Product Exploration Steps"
-      badge={steps.length}
+      badge={`${steps.length} steps`}
       expanded={open}
-      onToggle={() => setOpen(o => !o)}
+      onToggle={() => setOpen((o) => !o)}
     >
-      <div style={{ fontFamily: 'var(--font-mono)' }}>
-        {steps.map((step, i) => {
+      <div className="divide-y divide-border/60">
+        {steps.map((step) => {
           const isDist = step.isDistinguishing;
+
           return (
             <div
               key={step.stepNumber}
-              style={{
-                padding: '8px 14px',
-                borderBottom: '1px solid var(--border)',
-                background: isDist
-                  ? 'color-mix(in srgb, var(--err) 6%, var(--bg))'
-                  : i % 2 === 0 ? 'var(--bg)' : 'var(--s1)',
-              }}
+              className={`p-3 text-xs space-y-1 ${
+                isDist ? 'bg-red-50/40 dark:bg-red-950/20' : ''
+              }`}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 3 }}>
-                <span style={{ color: 'var(--t3)', fontSize: 10, minWidth: 18 }}>{step.stepNumber}.</span>
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--a)' }}>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-muted-foreground text-xs w-6 shrink-0 font-mono">
+                  {step.stepNumber}.
+                </span>
+                <span className="font-medium font-mono text-foreground">
                   ({step.pair[0]}, {step.pair[1]})
                 </span>
-                <span style={{ fontSize: 11, color: 'var(--t3)' }}>prefix:</span>
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--warn)' }}>
+                <span className="text-muted-foreground">prefix:</span>
+                <span className="font-medium font-mono text-foreground">
                   "{step.inputPrefix === '' ? 'ε' : step.inputPrefix}"
                 </span>
+
                 {isDist ? (
-                  <span
-                    style={{
-                      marginLeft: 'auto',
-                      fontSize: 9,
-                      padding: '1px 5px',
-                      borderRadius: 3,
-                      background: 'color-mix(in srgb, var(--err) 15%, transparent)',
-                      color: 'var(--err)',
-                      border: '1px solid color-mix(in srgb, var(--err) 35%, transparent)',
-                      fontWeight: 700,
-                      letterSpacing: '0.04em',
-                    }}
-                  >
-                    DISTINGUISHING
-                  </span>
+                  <Badge variant="destructive" className="ml-auto text-xs h-5 px-1.5 font-medium">
+                    Distinguishing
+                  </Badge>
                 ) : (
-                  <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--t3)' }}>
-                    A:{step.acceptingA ? 'acc' : 'rej'} · B:{step.acceptingB ? 'acc' : 'rej'}
+                  <span className="ml-auto text-xs font-mono text-muted-foreground">
+                    A: {step.acceptingA ? 'acc' : 'rej'} · B: {step.acceptingB ? 'acc' : 'rej'}
                   </span>
                 )}
               </div>
-              <p style={{ fontSize: 10, color: 'var(--t3)', lineHeight: 1.4, margin: 0, paddingLeft: 26 }}>
+              <p className="text-muted-foreground text-xs pl-8 leading-relaxed">
                 {step.description}
               </p>
             </div>

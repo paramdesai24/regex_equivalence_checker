@@ -1,8 +1,13 @@
 import React from 'react';
 import type { ProcessedRegexResult } from '../automata/regex/types';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Badge } from './ui/badge';
+import { X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface RegexInputRowProps {
-  label: string;       // "A" | "B"
+  label: string; // "A" | "B"
   value: string;
   onChange: (v: string) => void;
   result: ProcessedRegexResult | null;
@@ -17,129 +22,64 @@ export const RegexInputRow: React.FC<RegexInputRowProps> = ({
   placeholder = 'e.g. (a|b)*',
 }) => {
   const isErr = result ? !result.isValid : false;
-  const isOk  = result ? result.isValid : false;
-  const accentColor = label === 'A' ? 'var(--a)' : 'var(--b)';
-  const borderColor = isErr ? 'var(--err)' : isOk ? 'var(--border-2)' : 'var(--border)';
+  const isOk = result ? result.isValid : false;
+  const inputId = `regex-input-${label.toLowerCase()}`;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        {/* Label badge */}
-        <span
-          style={{
-            width: 28,
-            height: 28,
-            borderRadius: 'var(--r-sm)',
-            background: 'var(--s2)',
-            border: `1px solid ${accentColor}40`,
-            display: 'grid',
-            placeItems: 'center',
-            fontSize: 11,
-            fontFamily: 'var(--font-mono)',
-            fontWeight: 600,
-            color: accentColor,
-            flexShrink: 0,
-          }}
-        >
-          {label}
-        </span>
-
-        {/* Input field */}
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '0 12px',
-            height: 38,
-            borderRadius: 'var(--r-sm)',
-            border: `1px solid ${borderColor}`,
-            background: 'var(--s1)',
-            transition: 'border-color 150ms',
-          }}
-        >
-          <input
-            id={`regex-input-${label.toLowerCase()}`}
-            type="text"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder}
-            spellCheck={false}
-            autoComplete="off"
-            autoCorrect="off"
-            style={{
-              flex: 1,
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 14,
-              color: 'var(--t1)',
-              minWidth: 0,
-            }}
-          />
-          {value && (
-            <button
-              aria-label="Clear"
-              onClick={() => onChange('')}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'var(--t3)',
-                padding: '2px 4px',
-                lineHeight: 1,
-                fontSize: 14,
-                borderRadius: 4,
-                transition: 'color 120ms',
-                flexShrink: 0,
-              }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'var(--t2)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'var(--t3)')}
-            >
-              ×
-            </button>
-          )}
-        </div>
-
-        {/* Validity pill */}
+    <div className="space-y-1.5 flex-1 min-w-0">
+      <div className="flex items-center justify-between">
+        <Label htmlFor={inputId} className="ui-label">
+          Regex {label}
+        </Label>
         {result && (
-          <span
-            style={{
-              fontSize: 10,
-              fontFamily: 'var(--font-mono)',
-              padding: '2px 7px',
-              borderRadius: 4,
-              background: isOk ? 'color-mix(in srgb, var(--ok) 10%, transparent)' : 'color-mix(in srgb, var(--err) 10%, transparent)',
-              border: `1px solid ${isOk ? 'color-mix(in srgb, var(--ok) 30%, transparent)' : 'color-mix(in srgb, var(--err) 30%, transparent)'}`,
-              color: isOk ? 'var(--ok)' : 'var(--err)',
-              flexShrink: 0,
-              letterSpacing: '0.02em',
-            }}
+          <Badge
+            variant={isOk ? 'outline' : 'destructive'}
+            className={cn(
+              'text-xs font-mono font-medium px-2 py-0.5',
+              isOk ? 'text-muted-foreground border-border' : ''
+            )}
           >
-            {isOk ? `${result.tokens.length} tok` : 'error'}
-          </span>
+            {isOk ? `${result.tokens.length} tokens` : 'Syntax error'}
+          </Badge>
         )}
       </div>
 
-      {/* Error message */}
+      <div className="relative flex items-center">
+        <Input
+          id={inputId}
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          spellCheck={false}
+          autoComplete="off"
+          autoCorrect="off"
+          className={cn(
+            'h-10 text-sm font-mono pr-8 transition-colors',
+            isErr && 'border-red-400 focus-visible:ring-red-400 bg-red-50/20'
+          )}
+        />
+        {value && (
+          <button
+            type="button"
+            aria-label={`Clear regex ${label}`}
+            onClick={() => onChange('')}
+            className="absolute right-2.5 text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
+      {/* Error state with character caret */}
       {result?.error && (
-        <div
-          style={{
-            marginLeft: 38,
-            fontFamily: 'var(--font-mono)',
-            fontSize: 11,
-            color: 'var(--err)',
-            lineHeight: 1.4,
-          }}
-        >
-          {result.error.message}
+        <div className="text-xs font-mono text-destructive pt-0.5 space-y-0.5 leading-snug">
+          <div>{result.error.message}</div>
           {value && (
-            <div style={{ color: 'var(--t3)', marginTop: 2, whiteSpace: 'pre' }}>
+            <div className="text-muted-foreground whitespace-pre font-mono text-xs leading-tight select-none">
               {value}
               {'\n'}
-              <span style={{ color: 'var(--err)' }}>
+              <span className="text-destructive font-semibold">
                 {' '.repeat(Math.min(result.error.position, value.length))}^
               </span>
             </div>
@@ -147,21 +87,16 @@ export const RegexInputRow: React.FC<RegexInputRowProps> = ({
         </div>
       )}
 
-      {/* Postfix summary */}
+      {/* Technical postfix / explicit summary */}
       {result?.isValid && (
-        <div
-          style={{
-            marginLeft: 38,
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '4px 16px',
-            fontSize: 11,
-            fontFamily: 'var(--font-mono)',
-            color: 'var(--t3)',
-          }}
-        >
-          <span>explicit: <span style={{ color: 'var(--t2)' }}>{result.explicitConcatString}</span></span>
-          <span>postfix: <span style={{ color: 'var(--t2)' }}>{result.postfixString}</span></span>
+        <div className="flex items-center gap-3 text-xs font-mono text-muted-foreground pt-0.5 truncate leading-normal">
+          <span className="truncate">
+            explicit: <span className="text-foreground font-medium">{result.explicitConcatString}</span>
+          </span>
+          <span className="text-border">·</span>
+          <span className="truncate">
+            postfix: <span className="text-foreground font-medium">{result.postfixString}</span>
+          </span>
         </div>
       )}
     </div>

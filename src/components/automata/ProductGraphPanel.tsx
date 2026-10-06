@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { ProductAutomaton } from '../../automata/equivalence/types';
 import { ProductAutomatonGraph } from './ProductAutomatonGraph';
 import { AccordionSection } from './AccordionSection';
-import { useState } from 'react';
 
 interface ProductGraphPanelProps {
   productAutomaton: ProductAutomaton;
@@ -10,21 +9,21 @@ interface ProductGraphPanelProps {
   counterexampleEdgeIds?: string[];
 }
 
-function LegendDot({ color, label }: { color: string; label: string }) {
+function LegendIndicator({
+  colorClass,
+  borderClass,
+  label,
+}: {
+  colorClass: string;
+  borderClass: string;
+  label: string;
+}) {
   return (
-    <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--t3)' }}>
+    <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
       <span
-        style={{
-          width: 9,
-          height: 9,
-          borderRadius: '50%',
-          border: `1.5px solid ${color}`,
-          background: `${color}20`,
-          flexShrink: 0,
-          display: 'inline-block',
-        }}
+        className={`w-2.5 h-2.5 rounded-full ${colorClass} ${borderClass} inline-block shrink-0`}
       />
-      {label}
+      <span>{label}</span>
     </span>
   );
 }
@@ -34,36 +33,41 @@ export const ProductGraphPanel: React.FC<ProductGraphPanelProps> = ({
   counterexampleNodeIds = [],
   counterexampleEdgeIds = [],
 }) => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
 
-  const distCount   = productAutomaton.distinguishingStates.length;
-  const stateCount  = productAutomaton.states.length;
-  const transCount  = productAutomaton.transitions.length;
-  const badge = `${stateCount} states · ${transCount} trans${distCount > 0 ? ` · ${distCount} dist.` : ''}`;
+  const distCount = productAutomaton.distinguishingStates.length;
+  const stateCount = productAutomaton.states.length;
+  const transCount = productAutomaton.transitions.length;
+  const badge = `${stateCount} states · ${transCount} trans${
+    distCount > 0 ? ` · ${distCount} dist.` : ''
+  }`;
 
   return (
     <AccordionSection
       title="Reachable Product Automaton Graph"
       badge={badge}
       expanded={open}
-      onToggle={() => setOpen(o => !o)}
+      onToggle={() => setOpen((o) => !o)}
     >
-      <div style={{ padding: 14, background: 'var(--bg)' }}>
+      <div className="p-3.5 space-y-3 bg-background">
         {/* Legend */}
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '6px 20px',
-            marginBottom: 12,
-            paddingBottom: 10,
-            borderBottom: '1px solid var(--border)',
-          }}
-        >
-          <LegendDot color="var(--a)" label="Start (s₀A, s₀B)" />
-          <LegendDot color="var(--err)" label="Distinguishing (A XOR B)" />
+        <div className="flex flex-wrap gap-4 pb-2 border-b border-border">
+          <LegendIndicator
+            colorClass="bg-foreground"
+            borderClass="border border-foreground"
+            label="Start state (s₀A, s₀B)"
+          />
+          <LegendIndicator
+            colorClass="bg-red-100"
+            borderClass="border border-red-500"
+            label="Distinguishing (L(A) △ L(B))"
+          />
           {counterexampleNodeIds.length > 0 && (
-            <LegendDot color="var(--warn)" label="Shortest Counterexample Path" />
+            <LegendIndicator
+              colorClass="bg-amber-100"
+              borderClass="border border-amber-600"
+              label="Counterexample Path"
+            />
           )}
         </div>
 

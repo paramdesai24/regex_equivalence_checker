@@ -2,7 +2,8 @@ import React, { useMemo } from 'react';
 import type { ProcessedRegexResult } from '../automata/regex/types';
 import { buildNFA } from '../automata/nfa/thompson';
 import { NFAPanel } from '../components/automata/NFAPanel';
-import { ArrowRight, AlertCircle } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { ArrowRight } from 'lucide-react';
 
 interface NFATabProps {
   resultA: ProcessedRegexResult | null;
@@ -13,7 +14,14 @@ interface NFATabProps {
   onGoToDFA?: () => void;
 }
 
-export const NFATab: React.FC<NFATabProps> = ({ resultA, resultB, regexA, regexB, onGoToInput, onGoToDFA }) => {
+export const NFATab: React.FC<NFATabProps> = ({
+  resultA,
+  resultB,
+  regexA,
+  regexB,
+  onGoToInput,
+  onGoToDFA,
+}) => {
   const buildResult = (result: ProcessedRegexResult | null) => {
     if (!result || !result.isValid || result.postfixTokens.length === 0) return null;
     try {
@@ -30,209 +38,73 @@ export const NFATab: React.FC<NFATabProps> = ({ resultA, resultB, regexA, regexB
 
   if (hasNeither) {
     return (
-      <div
-        style={{
-          padding: '64px 24px',
-          textAlign: 'center',
-          background: 'var(--s0)',
-          border: '1px dashed var(--border-2)',
-          borderRadius: 'var(--r-lg)',
-          marginTop: 20,
-        }}
-      >
-        <div
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: '50%',
-            background: 'var(--s1)',
-            border: '1px solid var(--border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 16px',
-            color: 'var(--t3)',
-          }}
-        >
-          <AlertCircle size={20} />
-        </div>
-        <p style={{ color: 'var(--t2)', fontSize: 13, marginBottom: 12 }}>
-          Enter valid regular expressions to inspect their ε-NFAs.
+      <div className="py-16 px-6 text-center border border-dashed border-border rounded-lg max-w-xl mx-auto space-y-3">
+        <p className="ui-body text-muted-foreground">
+          Enter valid regular expressions and run compare to inspect their ε-NFAs.
         </p>
-        <button
-          onClick={onGoToInput}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            fontSize: 12,
-            fontFamily: 'var(--font-sans)',
-            padding: '6px 14px',
-            borderRadius: 'var(--r-sm)',
-            background: 'var(--s1)',
-            border: '1px solid var(--border-2)',
-            color: 'var(--t1)',
-            cursor: 'pointer',
-            transition: 'background 0.15s, border-color 0.15s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--s2)';
-            e.currentTarget.style.borderColor = 'var(--border-hover)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'var(--s1)';
-            e.currentTarget.style.borderColor = 'var(--border-2)';
-          }}
-        >
-          Go to Input tab <ArrowRight size={13} />
-        </button>
+        <Button variant="outline" size="default" onClick={onGoToInput} className="gap-1.5 text-[13px] font-medium h-8.5">
+          <span>Go to Input tab</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Button>
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* Section header */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-          paddingBottom: 14,
-          borderBottom: '1px solid var(--border)',
-        }}
-      >
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <h2
-              style={{
-                fontSize: 14,
-                fontWeight: 600,
-                color: 'var(--t1)',
-                letterSpacing: '-0.01em',
-                margin: 0,
-              }}
-            >
+    <div className="space-y-4">
+      {/* Section Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2">
+            <h2 className="section-title">
               ε-NFA — Thompson's Construction
             </h2>
-            <span
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                fontWeight: 600,
-                color: 'var(--a)',
-                background: 'color-mix(in srgb, var(--a) 12%, transparent)',
-                border: '1px solid color-mix(in srgb, var(--a) 25%, transparent)',
-                padding: '1px 6px',
-                borderRadius: 'var(--r-xs)',
-              }}
-            >
-              Stage 2
+            <span className="ui-meta font-mono">
+              (Stage 2)
             </span>
           </div>
-          <p style={{ fontSize: 12, color: 'var(--t3)', margin: '4px 0 0' }}>
-            Built incrementally from postfix tokens via Thompson fragments. ε denotes non-consuming transitions.
+          <p className="ui-body-small">
+            Constructed inductively from postfix regular expression tokens using Thompson fragments.
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              fontFamily: 'var(--font-mono)',
-              fontSize: 11,
-              color: 'var(--t3)',
-            }}
-          >
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <span
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: '50%',
-                  background: 'var(--a)',
-                }}
-              />
-              Start
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 ui-meta font-mono">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="font-semibold text-foreground">→</span> Start
             </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <span
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: '50%',
-                  border: '1.5px double var(--b)',
-                }}
-              />
+            <span className="text-border">·</span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-full border border-foreground inline-block shadow-[0_0_0_1.5px_#fff,0_0_0_2.5px_#18181b]" />
               Accept
             </span>
           </div>
 
           {onGoToDFA && (
-            <button
+            <Button
+              variant="outline"
+              size="default"
               onClick={onGoToDFA}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                padding: '5px 12px',
-                borderRadius: 'var(--r-sm)',
-                background: 'var(--s1)',
-                border: '1px solid var(--border-2)',
-                color: 'var(--t1)',
-                fontSize: 12,
-                fontFamily: 'var(--font-sans)',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'background 0.15s, border-color 0.15s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--s2)';
-                e.currentTarget.style.borderColor = 'var(--border-hover)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'var(--s1)';
-                e.currentTarget.style.borderColor = 'var(--border-2)';
-              }}
+              className="gap-1.5 text-[13px] font-normal h-8"
             >
-              View DFA <ArrowRight size={13} />
-            </button>
+              <span>View DFA</span>
+              <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
+            </Button>
           )}
         </div>
       </div>
 
-      {/* Two panels */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))',
-          gap: 16,
-        }}
-      >
+      {/* Side-by-side or stacked panels */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         {nfaResultA ? (
           <NFAPanel
             label="Regex A"
             regexStr={regexA}
             nfa={nfaResultA.nfa}
             steps={nfaResultA.steps}
-            accent="indigo"
           />
         ) : (
-          <div
-            style={{
-              padding: 24,
-              borderRadius: 'var(--r-md)',
-              background: 'var(--s0)',
-              border: '1px solid var(--border)',
-              textAlign: 'center',
-              fontSize: 12,
-              color: 'var(--t3)',
-            }}
-          >
+          <div className="p-6 rounded-md border border-border bg-muted/20 text-center ui-body-small">
             {resultA && !resultA.isValid
               ? `Regex A syntax error: ${resultA.error?.message}`
               : 'Regex A: not entered.'}
@@ -245,20 +117,9 @@ export const NFATab: React.FC<NFATabProps> = ({ resultA, resultB, regexA, regexB
             regexStr={regexB}
             nfa={nfaResultB.nfa}
             steps={nfaResultB.steps}
-            accent="teal"
           />
         ) : (
-          <div
-            style={{
-              padding: 24,
-              borderRadius: 'var(--r-md)',
-              background: 'var(--s0)',
-              border: '1px solid var(--border)',
-              textAlign: 'center',
-              fontSize: 12,
-              color: 'var(--t3)',
-            }}
-          >
+          <div className="p-6 rounded-md border border-border bg-muted/20 text-center ui-body-small">
             {resultB && !resultB.isValid
               ? `Regex B syntax error: ${resultB.error?.message}`
               : 'Regex B: not entered.'}

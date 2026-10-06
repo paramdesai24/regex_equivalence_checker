@@ -54,8 +54,8 @@ function layoutProductStates(
     byLayer.get(l)!.push(sId);
   }
 
-  const HGAP = 190;
-  const VGAP = 100;
+  const HGAP = 220;
+  const VGAP = 135;
   const positions = new Map<string, { x: number; y: number }>();
 
   for (const [layer, statesInLayer] of byLayer) {
@@ -130,7 +130,7 @@ export function productToGraph(
 
   const edges: ProductGraphEdge[] = Array.from(edgeMap.entries()).map(([key, val], i) => {
     const [src, tgt] = key.split('->');
-    const sortedSymbols = Array.from(val.symbols).sort().join(',');
+    const sortedSymbols = Array.from(val.symbols).sort().join(', ');
 
     return {
       id: `p-e${i}-${key}`,
