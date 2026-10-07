@@ -6,19 +6,113 @@ A Principles of Compiler Design course project.  Determines whether two regular 
 
 ## Pipeline
 
+Yes. Each stage runs a specific algorithm or a set of well-defined procedures. The project implements the regex-processing algorithms in TypeScript; it does not call a general-purpose regex compiler. The seven stages below show how one input expression is converted into an automaton and how two resulting automata are compared.
+
 ```
 Regex A / Regex B
-  ↓  Phase 1 (complete)
-Tokenizer → Validator → Explicit Concat → Shunting-Yard Postfix
-  ↓  Phase 2 (complete)
-Thompson's Construction → ε-NFA visualization
-  ↓  Phase 3 (complete)
-ε-Closure / Subset Construction → DFA visualization & transition table
-  ↓  Phase 4 (complete)
-Hopcroft / Partition Refinement → Minimized DFA visualization
-  ↓  Phase 5 (complete)
-Product Automaton + Symmetric Difference BFS → Language Equivalence + Shortest Counterexample
+  ↓
+1. Tokenize and validate each expression
+  ↓
+2. Insert explicit concatenation operators
+  ↓
+3. Convert infix notation to postfix (Shunting-Yard)
+  ↓
+4. Build an ε-NFA (Thompson's construction)
+  ↓
+5. Convert the ε-NFA to a DFA (ε-closure + subset construction)
+  ↓
+6. Minimize each DFA (reachability + partition refinement)
+  ↓
+7. Compare the minimized DFAs (product automaton + BFS)
+  ↓
+Equivalent / Not equivalent, with a shortest counterexample when different
 ```
+
+Stages 1–6 run independently for Regex A and Regex B. Stage 7 compares their results. The application also displays intermediate automata and construction details so you can inspect how each stage works.
+
+### How this is done in the code
+The entire regex-to-DFA conversion and equivalence checking is implemented from scratch in pure TypeScript under the `src/automata/` directory. No external regex compilation libraries are used. The implementation is broken down into modular phases:
+- **`src/automata/regex/`**: Handles string tokenization, syntax validation, and postfix conversion (Shunting-Yard).
+- **`src/automata/nfa/`**: Implements Thompson's construction to build the initial ε-NFA.
+- **`src/automata/dfa/`**: Executes subset construction and ε-closures.
+- **`src/automata/minimization/`**: Implements partition refinement for DFA minimization.
+- **`src/automata/equivalence/`**: Builds a product automaton and runs BFS to find equivalence or counterexamples.
+
+### Libraries & Dependencies
+The core algorithmic logic has **zero external dependencies**. Dependencies are only used for the user interface, visualization, and tooling:
+- **[React](https://react.dev/) & [Tailwind CSS](https://tailwindcss.com/)**: Used for building the interactive web application UI.
+- **[React Flow](https://reactflow.dev/)**: Used to render the interactive, node-based visual graphs for NFAs, DFAs, and Product Automata.
+- **[Vite](https://vitejs.dev/)**: Fast frontend build tool.
+- **[Vitest](https://vitest.dev/)**: Used for the extensive unit testing suite covering edge cases in automata construction.
+- **Radix UI**: Provides accessible, unstyled UI primitives (Tabs, Dialogs, Tooltips).
+
+### Key Mathematical Formulas Used
+The pipeline relies on fundamental automata theory formulas:
+- **Subset Construction (DFA state transition):** 
+  $\delta_{DFA}(S, a) = \varepsilon\text{-closure}(\text{move}(S, a))$
+- **Partition Refinement (Minimization):** 
+  Initial partition: $P_0 = \{ F, Q \setminus F \}$
+  Splitting condition: States $s_1, s_2 \in B$ are distinguished by symbol $a$ if $\delta(s_1, a)$ and $\delta(s_2, a)$ belong to different blocks.
+- **Product Automaton (Equivalence):** 
+  Transition: $\delta_{\times}((s_A, s_B), c) = (\delta_A(s_A, c), \delta_B(s_B, c))$
+  Distinguishing state condition (Symmetric Difference): $(s_A \in F_A) \oplus (s_B \in F_B)$
+## How the seven stages work
+
+### 1. Tokenize and validate
+
+The tokenizer reads the expression one character at a time and creates tokens for literals, `|`, `*`, and parentheses. The validator checks for malformed input such as unmatched parentheses, an empty expression, or an alternation missing one of its operands. Tokens retain their source positions so errors can point to the relevant character.
+
+Implemented in `src/automata/regex/tokenizer.ts` and `validator.ts`.
+
+### 2. Make concatenation explicit
+
+Concatenation is implicit in the input: `ab` means “match `a`, then `b`.” This stage inserts an internal `.` wherever two neighboring tokens imply concatenation. For example, `(a|b)*abb` becomes `(a|b)*.a.b.b`.
+
+Implemented in `src/automata/regex/concatenation.ts`.
+
+### 3. Convert to postfix notation
+
+The Shunting-Yard algorithm reorders the tokens into postfix (Reverse Polish) notation, where operators follow their operands. This makes precedence and grouping explicit and lets the next stage process the expression with a stack. For example, `(a|b)*` becomes `ab|*`.
+
+Implemented in `src/automata/regex/postfix.ts`.
+
+### 4. Build an ε-NFA
+
+Thompson's construction processes the postfix tokens using a stack of small automaton fragments. A literal creates a two-state fragment. Concatenation joins two fragments with an ε-transition; union branches to either fragment; and Kleene star adds transitions for zero or more repetitions. An ε-transition consumes no input symbol.
+
+The result is a nondeterministic finite automaton (ε-NFA). The builder also records construction steps for the UI.
+
+Implemented in `src/automata/nfa/thompson.ts`.
+
+### 5. Convert the ε-NFA to a DFA
+
+Subset construction creates a deterministic finite automaton (DFA). Each DFA state represents a set of ε-NFA states:
+
+1. Find the ε-closure of the current set: all states reachable using zero or more ε-transitions.
+2. For each input symbol, find the NFA states reachable on that symbol (`move`), then take their ε-closure.
+3. Treat each previously unseen set as a new DFA state and continue until no new sets remain.
+
+A DFA state accepts if its set contains the ε-NFA's accepting state. Missing transitions are represented through a dead/trap state where needed.
+
+Implemented in `src/automata/dfa/epsilonClosure.ts`, `move.ts`, and `subset.ts`.
+
+### 6. Minimize the DFA
+
+Partition refinement groups DFA states that cannot be distinguished by any input string. The implementation first removes unreachable states, then separates accepting from non-accepting states. It repeatedly splits groups when states transition to different groups on some symbol. When no more splits are possible, each group becomes one state in the minimized DFA.
+
+Implemented in `src/automata/minimization/reachable.ts` and `minimize.ts`.
+
+### 7. Compare the two minimized DFAs
+
+The equivalence checker aligns the two DFAs to use the same combined alphabet, sending symbols missing from one DFA to its dead state. It then explores pairs of states in a product automaton using breadth-first search (BFS).
+
+A pair is a mismatch if one DFA accepts and the other rejects. If BFS finds such a pair, it reconstructs the input string that reached it. BFS guarantees that this is a shortest distinguishing string. If no mismatch is reachable, the expressions denote the same language.
+
+Implemented in `src/automata/equivalence/normalize.ts` and `equivalence.ts`.
+
+### Is this using a compiler library?
+
+No general-purpose regex compiler is used for these stages. The project contains its own implementations of tokenization, validation, Shunting-Yard conversion, Thompson construction, subset construction, DFA minimization, and equivalence checking. React and React Flow are used for the interface and automaton visualizations; they do not perform the regex-to-automaton conversion.
 
 ---
 
@@ -371,5 +465,4 @@ npm run build    # production bundle
 
 - **Why lexicographic sorting?**
   Sorting alphabet symbols lexicographically ensures that transition exploration during BFS is deterministic, consistently selecting the lexicographically earliest counterexample among equal-length ties.
-
 
